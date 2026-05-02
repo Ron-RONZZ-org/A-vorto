@@ -28,9 +28,18 @@ Requires **A-core** (automatically installed as dependency).
 ## Usage
 
 ```bash
-A vorto ls           # List all word entries
-A vorto vidi <uuid>  # View a word entry
-A vorto serci <query>  # Full-text search (FTS5)
+A vorto list              # List all word entries
+A vorto vidi <uuid>       # View a word entry (--html for markdown preview)
+A vorto serchi <query>    # Full-text search (FTS5, --fuzzy for fuzzy match)
+A vorto aldoni <teksto>   # Add a new word entry
+A vorto modifi <uuid>     # Modify a word entry
+A vorto forigi <uuid>     # Delete (soft) or --hard (permanent)
+A vorto malfari           # Undo last operation
+A vorto rubujo            # List entries in trash
+A vorto restaurigi <uuid>  # Restore from trash
+A vorto senrubujigi       # Empty trash (--days N)
+A vorto importi <path>    # Import from JSON (--password for encrypted)
+A vorto eksporti <path>   # Export to JSON/TOML (--format json|toml --password)
 ```
 
 ## Search

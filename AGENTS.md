@@ -98,12 +98,37 @@ uv venv .venv && uv pip install pytest pytest-mock typer rich --python .venv/bin
 PYTHONPATH=../A-core/src:src .venv/bin/python -m pytest tests/
 ```
 
+## Features
+
+A-vorto integrates the following A-core features:
+
+| Feature | CLI Command | A-core Module |
+|---------|-------------|---------------|
+| Undo system | `malfari` | `A.core.undo` |
+| Soft-delete trash | `rubujo`, `restaurigi`, `senrubujigi` | `CRUDService.delete(soft=True)` |
+| Import/Export | `importi`, `eksporti` | `A.core.import_`, `A.core.export` |
+| Markdown preview | `vidi --html` | `A.core.markdown_html_view` |
+| FTS5 search | `serchi` | `CRUDService.search_advanced()` |
+| Fuzzy search | `serchi --fuzzy` | `CRUDService.search_fuzzy()` |
+
+Pending A-core implementation:
+- Bidirectional links (see A-core #18)
+- Cross-references `vt#uuid` (see A-core #19)
+
+## Testing
+
+```bash
+cd A-vorto
+uv venv .venv && uv pip install pytest pytest-mock typer rich --python .venv/bin/python
+PYTHONPATH=../A-core/src:src .venv/bin/python -m pytest tests/
+```
+
 ### Test Coverage
 
 | Module | Tests | Description |
 |--------|-------|-------------|
-| `test_cli.py` | 7 | CLI commands via CliRunner |
+| `test_cli.py` | 7+ | CLI commands via CliRunner |
 | `test_service.py` | 9 | CRUDService operations |
 | `test_storage.py` | 5 | SQLite storage layer |
 
-**Total: 23 tests**
+**Total: 23+ tests** (add tests for new commands)
