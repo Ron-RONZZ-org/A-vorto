@@ -45,9 +45,32 @@ If you need a utility that should be in A-core:
 src/A_vorto/
 ├── __init__.py       # Plugin exports
 ├── cli.py           # Typer app
-├── service.py       # Business logic
+├── service.py       # CRUDService with FTS5
 └── data/
-    └── storage.py  # SQLite (uses A.data.base)
+    └── storage.py  # SQLite (uses A.data.base + FTSConfig)
+```
+
+## Search
+
+A-vorto uses A-core's FTS5 full-text search:
+
+- Full-text search on `teksto` field
+- Filters: `lingvo`, `kategorio`, `tipo`, `temo`
+- French ligature normalization (œ→oe, æ→ae)
+- Fuzzy matching via rapidfuzz (optional) or difflib fallback
+
+```python
+from A_vorto.service import get_service
+svc = get_service()
+
+# Full-text search (matches normalized form too)
+svc.search_fts("cœur")  # matches "coeur" as well
+
+# Fuzzy search (typo tolerance)
+svc.search_fuzzy("heelo", threshold=0.8)
+
+# Combined search
+svc.search_advanced("query", fuzzy=True, filters={"lingvo": "fr"})
 ```
 
 ## Code Standards

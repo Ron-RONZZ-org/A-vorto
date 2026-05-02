@@ -30,6 +30,27 @@ Requires **A-core** (automatically installed as dependency).
 ```bash
 A vorto ls           # List all word entries
 A vorto vidi <uuid>  # View a word entry
+A vorto serci <query>  # Full-text search (FTS5)
+```
+
+## Search
+
+A-vorto includes full-text search via SQLite FTS5:
+
+- **Full-text search**: Matches words and definitions
+- **French ligature support**: Search "cœur" finds "coeur" too
+- **Filters**: By language (`-l`), category (`-k`), type (`-t`)
+- **Fuzzy matching**: Typo tolerance (install `rapidfuzz` for speed)
+
+```bash
+# Full-text search
+A vorto serci "cœur"
+
+# With language filter
+A vorto serci "hello" --lingvo en
+
+# Fuzzy search (requires: pip install rapidfuzz)
+A vorto serci "heelo" --fuzzy
 ```
 
 ## Testing

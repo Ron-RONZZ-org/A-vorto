@@ -7,6 +7,8 @@ from typing import Optional
 
 from A import ensure_dirs as _ensure_dirs
 from A.data.base import SQLiteDB
+from A.data.search import FTSConfig
+from A.utils.normalize import fold_search_text
 
 _DATA_DIR: Path = Path.home() / ".local" / "share" / "A"
 _DB_FILE: Path = _DATA_DIR / "vorto.db"
@@ -55,4 +57,13 @@ def get_db() -> SQLiteDB:
     return db
 
 
-__all__ = ["ensure_dirs", "get_db"]
+# FTS5 configuration for vorto full-text search
+VORTO_FTS_CONFIG = FTSConfig(
+    table="vorto",
+    fts_columns=["teksto"],
+    filter_columns=["lingvo", "kategorio", "tipo", "temo"],
+    normalize={"teksto": fold_search_text},
+)
+
+
+__all__ = ["ensure_dirs", "get_db", "VORTO_FTS_CONFIG"]
