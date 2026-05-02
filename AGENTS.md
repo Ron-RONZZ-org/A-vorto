@@ -132,3 +132,6 @@ PYTHONPATH=../A-core/src:src .venv/bin/python -m pytest tests/
 | `test_storage.py` | 5 | SQLite storage layer |
 
 **Total: 23+ tests** (add tests for new commands)
+## Branch Convention
+
+All A-* repos use `main` as the primary branch. Use `main` for all development.
