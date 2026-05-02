@@ -2,12 +2,16 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Optional
 
 import typer
 
 from A import error, info, tr
+from A.core.import_ import import_json
+from A.core.export import export_json, export_toml
 from A.utils.output import console
+from A.core.markdown_html_view import markdown_to_html
 
 from A_vorto.service import get_service
 
@@ -63,6 +67,12 @@ def list(
 @app.command("vidi")
 def vidi(
     uuid: str,
+    html: bool = typer.Option(
+        False,
+        "--html",
+        "-h",
+        help=tr("Render markdown as HTML", "Render markdown as HTML", "Afficher le markdown en HTML"),
+    ),
 ) -> None:
     """View a word entry by UUID."""
     service = get_service()
@@ -84,6 +94,11 @@ def vidi(
         console.print(f"[bold cyan]Tipo:[/] {entry.get('tipo')}")
     if entry.get("temo"):
         console.print(f"[bold cyan]Temo:[/] {entry.get('temo')}")
+    
+    # Render markdown preview if requested
+    if html and entry.get("teksto"):
+        html_output = markdown_to_html(entry["teksto"])
+        console.print(f"[bold cyan]HTML:[/]\n{html_output}")
     
     console.print(f"[bold cyan]Kreita:[/] {entry.get('kreita_je')}")
     console.print(f"[bold cyan]Modifita:[/] {entry.get('modifita_je')}")
@@ -181,9 +196,22 @@ def forigi(
         info(tr(f"Forigas {uuid} (permanenta)", f"Deleted {uuid} (permanent)", f"Supprime {uuid} (permanent)"))
 
 
-@app.command("serchi")
-def serchi(
-    query: str,
+@app.command("malfari")
+def malfari() -> None:
+    """Undo the last operation."""
+    service = get_service()
+    result = service.undo()
+    
+    if not result:
+        info(tr("Nenio por malfari", "Nothing to undo", "Rien a defaire"))
+        return
+    
+    op_type = result.get("operation", "unknown")
+    info(tr(f"Malfaris {op_type}", f"Undid {op_type}", f"Defait {op_type}"))
+
+
+@app.command("rubujo")
+def rubujo(
     limit: Optional[int] = typer.Option(
         20,
         "--limit",
@@ -191,12 +219,136 @@ def serchi(
         help=tr("Limit results", "Limit results", "Limiter les resultats"),
     ),
 ) -> None:
-    """Search word entries."""
+    """List entries in trash."""
     service = get_service()
-    entries = service.search("teksto", query, case_sensitive=False)
+    entries = service.get_trash(limit=limit)
     
-    if limit:
-        entries = entries[:limit]
+    if not entries:
+        info(tr("Rubujo estas cxirkau", "Trash is empty", "Corbeille vide"))
+        return
+    
+    for entry in entries:
+        uuid = entry.get("uuid", "")[:8]
+        teksto = entry.get("teksto", "")
+        forigita = entry.get("forigita_je", "")
+        console.print(f"[cyan]{uuid}[/] [bold]{teksto}[/] [dim]{forigita}[/]")
+    
+    info(tr(f"{len(entries)} en rubujo", f"{len(entries)} in trash", f"{len(entries)} dans la corbeille"))
+
+
+@app.command("restaurigi")
+def restaurigi(
+    uuid: str,
+) -> None:
+    """Restore an entry from trash."""
+    service = get_service()
+    
+    entry = service.restore(uuid)
+    if not entry:
+        error(tr(f"Vorto {uuid} ne trovitas en rubujo", f"Word {uuid} not found in trash", f"Mot {uuid} non trouve dans la corbeille"))
+        raise typer.Exit(1)
+    
+    info(tr(f"Restaurigis {uuid}", f"Restored {uuid}", f"Restored {uuid}"))
+
+
+@app.command("senrubujigi")
+def senrubujigi(
+    days: int = typer.Option(
+        30,
+        "--days",
+        "-d",
+        help=tr("Delete entries older than days", "Delete entries older than days", "Supprimer les entrees plus anciennes que jours"),
+    ),
+) -> None:
+    """Permanently delete entries from trash older than specified days."""
+    service = get_service()
+    
+    count = service.empty_trash(days=days)
+    info(tr(f"Forigis {count} el rubujo", f"Deleted {count} from trash", f"Supprime {count} de la corbeille"))
+
+
+@app.command("importi")
+def importi(
+    path: Path = typer.Argument(..., help=tr("Path to import file", "Path to import file", "Chemin du fichier a importer")),
+    password: Optional[str] = typer.Option(
+        None,
+        "--password",
+        "-p",
+        help=tr("Decryption password", "Decryption password", "Mot de passe de decryptage"),
+    ),
+) -> None:
+    """Import word entries from JSON file."""
+    service = get_service()
+    
+    try:
+        records = import_json(path, decryption_password=password)
+    except Exception as e:
+        error(tr(f"Importo fiaskis: {e}", f"Import failed: {e}", f"Echec de l'importation: {e}"))
+        raise typer.Exit(1)
+    
+    count = 0
+    for record in records:
+        try:
+            service.create(record)
+            count += 1
+        except Exception:
+            pass  # Skip duplicates/errors
+    
+    info(tr(f"Importis {count} vortojn", f"Imported {count} words", f"Importe {count} mots"))
+
+
+@app.command("eksporti")
+def eksporti(
+    path: Path = typer.Argument(..., help=tr("Path to export file", "Path to export file", "Chemin du fichier d'exportation")),
+    formato: str = typer.Option(
+        "json",
+        "--format",
+        "-f",
+        help=tr("Format: json, toml", "Format: json, toml", "Format: json, toml"),
+    ),
+    password: Optional[str] = typer.Option(
+        None,
+        "--password",
+        "-p",
+        help=tr("Encryption password", "Encryption password", "Mot de passe de chiffrement"),
+    ),
+) -> None:
+    """Export word entries to JSON or TOML file."""
+    service = get_service()
+    
+    entries = service.list()
+    
+    try:
+        if formato == "toml":
+            export_toml(path, entries, encryption_password=password)
+        else:
+            export_json(path, entries, encryption_password=password)
+    except Exception as e:
+        error(tr(f"Eksporto fiaskis: {e}", f"Export failed: {e}", f"Echec de l'exportation: {e}"))
+        raise typer.Exit(1)
+    
+    info(tr(f"Eksportis {len(entries)} vortojn al {path}", f"Exported {len(entries)} words to {path}", f"Exporte {len(entries)} mots vers {path}"))
+
+
+@app.command("serchi")
+def serchi(
+    query: str,
+    fuzzy: bool = typer.Option(
+        False,
+        "--fuzzy",
+        "-f",
+        help=tr("Enable fuzzy matching", "Enable fuzzy matching", "Activer la recherche floue"),
+    ),
+    limit: Optional[int] = typer.Option(
+        20,
+        "--limit",
+        "-l",
+        help=tr("Limit results", "Limit results", "Limiter les resultats"),
+    ),
+) -> None:
+    """Search word entries using FTS5 full-text search."""
+    service = get_service()
+    entries = service.search_advanced(query, fuzzy=fuzzy, limit=limit)
     
     if not entries:
         info(tr("Neniuj rezultoj", "No results", "Aucun resultat"))

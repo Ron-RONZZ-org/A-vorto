@@ -12,10 +12,15 @@ _vorto_service: CRUDService | None = None
 
 
 def get_service() -> CRUDService:
-    """Get the singleton CRUDService for vorto table with FTS5."""
+    """Get the singleton CRUDService for vorto table with FTS5 and undo."""
     global _vorto_service
     if _vorto_service is None:
-        _vorto_service = CRUDService(get_db(), "vorto", fts_config=VORTO_FTS_CONFIG)
+        _vorto_service = CRUDService(
+            get_db(),
+            "vorto",
+            fts_config=VORTO_FTS_CONFIG,
+            undo_size=10,
+        )
     return _vorto_service
 
 
