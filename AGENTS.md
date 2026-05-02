@@ -44,8 +44,9 @@ If you need a utility that should be in A-core:
 ```
 src/A_vorto/
 ├── __init__.py       # Plugin exports
-├── cli.py           # Typer app
+├── cli.py           # Typer app (11 commands)
 ├── service.py       # CRUDService with FTS5
+├── utils.py         # Type maps, parsers, normalizers (TIPO_MAP, TONO_MAP, difino/uzo parsing, etikedoj, kategorio auto-detect)
 └── data/
     └── storage.py  # SQLite (uses A.data.base + FTSConfig)
 ```
@@ -75,7 +76,7 @@ svc.search_advanced("query", fuzzy=True, filters={"lingvo": "fr"})
 
 ## Code Standards
 
-1. Use `tr()` for all user-facing strings
+1. Use `tr_multi()` for all user-facing strings (3-language: eo, en, fr)
 2. Use `error()` for errors, `info()` for info
 3. Type hints on all public functions
 4. Docstrings on all public functions
@@ -111,6 +112,18 @@ A-vorto integrates the following A-core features:
 | FTS5 search | `serchi` | `CRUDService.search_advanced()` |
 | Fuzzy search | `serchi --fuzzy` | `CRUDService.search_fuzzy()` |
 
+## A-vorto specific features
+
+| Feature | CLI | Implementation |
+|---------|-----|----------------|
+| Type normalization | `--tipo su,aj` | `utils.normalize_tipo()` maps abbreviations via TIPO_MAP |
+| Tonality normalization | `--tono nf` | `utils.normalize_tono()` maps via TONO_MAP |
+| Difinoj+Uzoj input | `--difino "def:{eg}"` | `utils.split_difino_uzo()` (3 syntax variants) |
+| Etikedoj (tags) | `--etikedo key:val` | `utils.parse_etikedoj()` |
+| Kategorio auto-detect | automatic on `aldoni` | `utils.detect_kategorio()` (vorto/frazo/frazdaro) |
+| Multiline text normalization | automatic | `utils.normalize_multiline_text()` |
+| Clear-* flags on `modifi` | `--clear-difinoj` etc. | Explicit reset of JSON arrays/null fields |
+
 Pending A-core implementation:
 - Bidirectional links (see A-core #18)
 - Cross-references `vt#uuid` (see A-core #19)
@@ -130,8 +143,9 @@ PYTHONPATH=../A-core/src:src .venv/bin/python -m pytest tests/
 | `test_cli.py` | 7+ | CLI commands via CliRunner |
 | `test_service.py` | 9 | CRUDService operations |
 | `test_storage.py` | 5 | SQLite storage layer |
+| `test_utils.py` | 56 | Type maps, parsers, normalizers |
 
-**Total: 23+ tests** (add tests for new commands)
+**Total: 79 tests** (3 pre-existing FTS5 failures in test env)
 ## Branch Convention
 
 All A-* repos use `main` as the primary branch. Use `main` for all development.
