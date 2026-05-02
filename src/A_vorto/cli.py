@@ -3,21 +3,20 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional
 
 import typer
 
-from A import error, info, tr
+from A import error, info, tr_multi
 from A.core.import_ import import_json
 from A.core.export import export_json, export_toml
 from A.utils.output import console
-from A.core.markdown_html_view import markdown_to_html
 
 from A_vorto.service import get_service
 
 app = typer.Typer(
     name="vorto",
-    help=tr(
+    help=tr_multi(
         "Mia Vorto — persona vortaro-mikroapo.",
         "Mia Vorto — personal wordbook microapp.",
         "Mia Vorto — microapplication de vocabulaire personnel.",
@@ -34,19 +33,19 @@ def list(
         "teksto",
         "--order-by",
         "-o",
-        help=tr("Order by field", "Order by field", "Champ de tri"),
+        help=tr_multi("Order by field", "Order by field", "Champ de tri"),
     ),
     desc: bool = typer.Option(
         False,
         "--desc",
         "-d",
-        help=tr("Descending order", "Descending order", "Ordre decroissant"),
+        help=tr_multi("Descending order", "Descending order", "Ordre decroissant"),
     ),
     limit: Optional[int] = typer.Option(
         None,
         "--limit",
         "-l",
-        help=tr("Limit results", "Limit results", "Limiter les resultats"),
+        help=tr_multi("Limit results", "Limit results", "Limiter les resultats"),
     ),
 ) -> None:
     """List all word entries."""
@@ -54,7 +53,7 @@ def list(
     entries = service.list(order_by=order_by, desc=desc, limit=limit)
     
     if not entries:
-        info(tr("Neniuj videblas", "No entries found", "Aucune entree"))
+        info(tr_multi("Neniuj videblas", "No entries found", "Aucune entree"))
         return
     
     for entry in entries:
@@ -71,102 +70,256 @@ def vidi(
         False,
         "--html",
         "-h",
-        help=tr("Render markdown as HTML", "Render markdown as HTML", "Afficher le markdown en HTML"),
+        help=tr_multi("Open markdown as HTML preview in browser", "Open markdown as HTML preview in browser", "Ouvrir le markdown en apercu HTML dans le navigateur"),
     ),
 ) -> None:
     """View a word entry by UUID."""
     service = get_service()
     entry = service.get(uuid)
-    
+
     if not entry:
-        error(tr(f"Vorto {uuid} ne trovitas", f"Word {uuid} not found", f"Mot {uuid} non trouve"))
+        error(tr_multi(f"Vorto {uuid} ne trovitas", f"Word {uuid} not found", f"Mot {uuid} non trouve"))
         raise typer.Exit(1)
-    
+
     # Display full entry
     console.print(f"[bold cyan]UUID:[/] {entry.get('uuid')}")
     console.print(f"[bold cyan]Teksto:[/] {entry.get('teksto')}")
-    
+
     if entry.get("lingvo"):
         console.print(f"[bold cyan]Lingvo:[/] {entry.get('lingvo')}")
     if entry.get("kategorio"):
         console.print(f"[bold cyan]Kategorio:[/] {entry.get('kategorio')}")
-    if entry.get("tipo"):
-        console.print(f"[bold cyan]Tipo:[/] {entry.get('tipo')}")
+
+    tipo = entry.get("tipo")
+    if tipo:
+        if isinstance(tipo, list):
+            console.print(f"[bold cyan]Tipo:[/] {', '.join(str(t) for t in tipo)}")
+        else:
+            console.print(f"[bold cyan]Tipo:[/] {tipo}")
+
     if entry.get("temo"):
         console.print(f"[bold cyan]Temo:[/] {entry.get('temo')}")
-    
-    # Render markdown preview if requested
+    if entry.get("tono"):
+        console.print(f"[bold cyan]Tono:[/] {entry.get('tono')}")
+    if entry.get("nivelo") is not None:
+        console.print(f"[bold cyan]Nivelo:[/] {entry.get('nivelo')}")
+    if entry.get("autoro"):
+        console.print(f"[bold cyan]Autoro:[/] {entry.get('autoro')}")
+    if entry.get("verko"):
+        console.print(f"[bold cyan]Verko:[/] {entry.get('verko')}")
+
+    # Show definitions with usage examples
+    difinoj = entry.get("difinoj") or []
+    uzoj = entry.get("uzoj") or []
+    if difinoj:
+        console.print("[bold cyan]Difinoj:[/]")
+        for i, d in enumerate(difinoj):
+            label = f"  {i + 1}. {d}"
+            if i < len(uzoj) and uzoj[i]:
+                label += f"  [dim]-- {uzoj[i]}[/]"
+            console.print(label)
+
+    # Show tags
+    etikedoj = entry.get("etikedoj") or {}
+    if etikedoj and isinstance(etikedoj, dict):
+        console.print(f"[bold cyan]Etikedoj:[/]")
+        for k, v in etikedoj.items():
+            console.print(f"  {k}: {v}")
+
+    # Show links (stored as list of UUIDs)
+    ligiloj = entry.get("ligiloj") or []
+    if ligiloj:
+        console.print(f"[bold cyan]Ligiloj:[/]")
+        for ref in ligiloj:
+            console.print(f"  {ref}")
+
+    # Open browser preview if requested
     if html and entry.get("teksto"):
-        html_output = markdown_to_html(entry["teksto"])
-        console.print(f"[bold cyan]HTML:[/]\n{html_output}")
-    
+        from A.core.markdown_html_view import preview_markdown
+        preview_markdown(entry["teksto"], title=entry["teksto"])
+
     console.print(f"[bold cyan]Kreita:[/] {entry.get('kreita_je')}")
     console.print(f"[bold cyan]Modifita:[/] {entry.get('modifita_je')}")
 
 
 @app.command("aldoni")
 def aldoni(
-    teksto: str = typer.Argument(..., help=tr("Word text", "Word text", "Texte du mot")),
-    lingvo: Optional[str] = typer.Option(None, "--lingvo", "-l", help=tr("Language", "Language", "Langue")),
-    kategorio: Optional[str] = typer.Option(None, "--kategorio", "-k", help=tr("Category", "Category", "Categorie")),
-    tipo: Optional[str] = typer.Option(None, "--tipo", help=tr("Type", "Type", "Type")),
-    temo: Optional[str] = typer.Option(None, "--temo", help=tr("Theme", "Theme", "Theme")),
+    teksto: str = typer.Argument(..., help=tr_multi("Word text", "Word text", "Texte du mot")),
+    lingvo: Optional[str] = typer.Option(None, "--lingvo", "-l", help=tr_multi("Language", "Language", "Langue")),
+    kategorio: Optional[str] = typer.Option(None, "--kategorio", "-k", help=tr_multi("Category (auto-detected if omitted)", "Category (auto-detected if omitted)", "Categorie (auto-detectee si omise)")),
+    tipo: Optional[str] = typer.Option(None, "--tipo", help=tr_multi("Type abbreviation(s), comma/semicolon-separated (e.g. su,aj)", "Type abbreviation(s), comma/semicolon-separated (e.g. su,aj)", "Abreviation(s) de type, separees par virgule/point-virgule")),
+    temo: Optional[str] = typer.Option(None, "--temo", help=tr_multi("Theme", "Theme", "Theme")),
+    tono: Optional[str] = typer.Option(None, "--tono", help=tr_multi("Tonality (e.g. nf, fo, am)", "Tonality (e.g. nf, fo, am)", "Tonalite (ex. nf, fo, am)")),
+    difinoj: Optional[List[str]] = typer.Option(None, "--difino", help=tr_multi("Definition with optional usage: difino:{uzo}", "Definition with optional usage: difino:{uzo}", "Definition avec usage optionnel: difino:{uzo}")),
+    uzoj: Optional[List[str]] = typer.Option(None, "--uzo", help=tr_multi("Usage example (standalone, no paired definition)", "Usage example (standalone, no paired definition)", "Exemple d'usage (autonome, sans definition associee)")),
+    etikedoj: Optional[List[str]] = typer.Option(None, "--etikedo", help=tr_multi("Tag in key:value format", "Tag in key:value format", "Etiquette au format cle:valeur")),
+    autoro: Optional[str] = typer.Option(None, "--autoro", help=tr_multi("Author", "Author", "Auteur")),
+    verko: Optional[str] = typer.Option(None, "--verko", help=tr_multi("Work/source", "Work/source", "Oeuvre/source")),
+    nivelo: Optional[float] = typer.Option(None, "--nivelo", help=tr_multi("Proficiency level (0.0-5.0)", "Proficiency level (0.0-5.0)", "Niveau de competence (0.0-5.0)")),
 ) -> None:
     """Add a new word entry."""
+    from A_vorto.utils import (
+        detect_kategorio,
+        normalize_tipo,
+        normalize_tono,
+        parse_etikedoj,
+        split_difino_uzo,
+    )
+
     service = get_service()
-    
-    data = {"teksto": teksto}
+
+    # Auto-detect kategorio if not provided
+    effective_kategorio = kategorio or detect_kategorio(teksto)
+    effective_tipo = normalize_tipo(tipo)
+    effective_tono = normalize_tono(tono)
+
+    data: dict[str, object] = {
+        "teksto": teksto,
+        "kategorio": effective_kategorio,
+    }
     if lingvo:
         data["lingvo"] = lingvo
-    if kategorio:
-        data["kategorio"] = kategorio
-    if tipo:
-        data["tipo"] = tipo
+    if effective_tipo is not None:
+        data["tipo"] = effective_tipo
     if temo:
         data["temo"] = temo
-    
+    if effective_tono is not None:
+        data["tono"] = effective_tono
+    if autoro:
+        data["autoro"] = autoro
+    if verko:
+        data["verko"] = verko
+    if nivelo is not None:
+        data["nivelo"] = nivelo
+
+    # Process difinoj with optional paired uzoj
+    parsed_difinoj: list[str] = []
+    parsed_uzoj: list[str] = []
+    if difinoj:
+        for raw in difinoj:
+            d, u = split_difino_uzo(raw)
+            parsed_difinoj.append(d)
+            parsed_uzoj.append(u)
+        data["difinoj"] = parsed_difinoj
+        data["uzoj"] = parsed_uzoj
+
+    # Standalone usage examples (appended after paired uzoj)
+    if uzoj:
+        existing = data.get("uzoj", [])
+        if isinstance(existing, list):
+            data["uzoj"] = existing + list(uzoj)
+
+    # Parse etikedoj
+    if etikedoj:
+        data["etikedoj"] = parse_etikedoj(etikedoj)
+
     entry = service.create(data)
-    info(tr(f"Aldonis {teksto}", f"Added {teksto}", f"Ajoute {teksto}"))
+    info(tr_multi(f"Aldonis {teksto}", f"Added {teksto}", f"Ajoute {teksto}"))
     console.print(f"[green]UUID:[/] {entry.get('uuid')}")
 
 
 @app.command("modifi")
 def modifi(
     uuid: str,
-    teksto: Optional[str] = typer.Option(None, "--teksto", "-t", help=tr("New word text", "New word text", "Nouveau texte")),
-    lingvo: Optional[str] = typer.Option(None, "--lingvo", "-l", help=tr("Language", "Language", "Langue")),
-    kategorio: Optional[str] = typer.Option(None, "--kategorio", "-k", help=tr("Category", "Category", "Categorie")),
-    tipo: Optional[str] = typer.Option(None, "--tipo", help=tr("Type", "Type", "Type")),
-    temo: Optional[str] = typer.Option(None, "--temo", help=tr("Theme", "Theme", "Theme")),
+    teksto: Optional[str] = typer.Option(None, "--teksto", "-t", help=tr_multi("New word text", "New word text", "Nouveau texte")),
+    lingvo: Optional[str] = typer.Option(None, "--lingvo", "-l", help=tr_multi("Language", "Language", "Langue")),
+    kategorio: Optional[str] = typer.Option(None, "--kategorio", "-k", help=tr_multi("Category", "Category", "Categorie")),
+    tipo: Optional[str] = typer.Option(None, "--tipo", help=tr_multi("Type abbreviation(s), comma/semicolon-separated", "Type abbreviation(s), comma/semicolon-separated", "Abreviation(s) de type, separees par virgule/point-virgule")),
+    temo: Optional[str] = typer.Option(None, "--temo", help=tr_multi("Theme", "Theme", "Theme")),
+    tono: Optional[str] = typer.Option(None, "--tono", help=tr_multi("Tonality (e.g. nf, fo, am)", "Tonality (e.g. nf, fo, am)", "Tonalite (ex. nf, fo, am)")),
+    difinoj: Optional[List[str]] = typer.Option(None, "--difino", help=tr_multi("Definition with optional usage: difino:{uzo}", "Definition with optional usage: difino:{uzo}", "Definition avec usage optionnel: difino:{uzo}")),
+    uzoj: Optional[List[str]] = typer.Option(None, "--uzo", help=tr_multi("Usage example (standalone)", "Usage example (standalone)", "Exemple d'usage (autonome)")),
+    etikedoj: Optional[List[str]] = typer.Option(None, "--etikedo", help=tr_multi("Tag in key:value format", "Tag in key:value format", "Etiquette au format cle:valeur")),
+    autoro: Optional[str] = typer.Option(None, "--autoro", help=tr_multi("Author", "Author", "Auteur")),
+    verko: Optional[str] = typer.Option(None, "--verko", help=tr_multi("Work/source", "Work/source", "Oeuvre/source")),
+    nivelo: Optional[float] = typer.Option(None, "--nivelo", help=tr_multi("Proficiency level (0.0-5.0)", "Proficiency level (0.0-5.0)", "Niveau de competence (0.0-5.0)")),
+    clear_difinoj: bool = typer.Option(False, "--clear-difinoj", help=tr_multi("Clear all definitions", "Clear all definitions", "Effacer toutes les definitions")),
+    clear_uzoj: bool = typer.Option(False, "--clear-uzoj", help=tr_multi("Clear all usage examples", "Clear all usage examples", "Effacer tous les exemples d'usage")),
+    clear_etikedoj: bool = typer.Option(False, "--clear-etikedoj", help=tr_multi("Clear all tags", "Clear all tags", "Effacer toutes les etiquettes")),
+    clear_ligiloj: bool = typer.Option(False, "--clear-ligiloj", help=tr_multi("Clear all links", "Clear all links", "Effacer tous les liens")),
+    clear_tipo: bool = typer.Option(False, "--clear-tipo", help=tr_multi("Clear type list", "Clear type list", "Effacer la liste des types")),
 ) -> None:
     """Modify a word entry."""
+    from A_vorto.utils import normalize_tipo, normalize_tono, parse_etikedoj, split_difino_uzo
+
     service = get_service()
-    
+
     # Check exists
     existing = service.get(uuid)
     if not existing:
-        error(tr(f"Vorto {uuid} ne trovitas", f"Word {uuid} not found", f"Mot {uuid} non trouve"))
+        error(tr_multi(f"Vorto {uuid} ne trovitas", f"Word {uuid} not found", f"Mot {uuid} non trouve"))
         raise typer.Exit(1)
-    
+
     # Build update data
-    data = {}
-    if teksto:
+    data: dict[str, object] = {}
+    if teksto is not None:
         data["teksto"] = teksto
     if lingvo is not None:
         data["lingvo"] = lingvo
     if kategorio is not None:
         data["kategorio"] = kategorio
-    if tipo is not None:
-        data["tipo"] = tipo
     if temo is not None:
         data["temo"] = temo
-    
+    if autoro is not None:
+        data["autoro"] = autoro
+    if verko is not None:
+        data["verko"] = verko
+    if nivelo is not None:
+        data["nivelo"] = nivelo
+
+    # tipo: normalize if provided, clear if flag set
+    if tipo is not None:
+        effective = normalize_tipo(tipo)
+        if effective is not None:
+            data["tipo"] = effective
+    if clear_tipo:
+        data["tipo"] = []
+
+    # tono: normalize if provided
+    if tono is not None:
+        effective = normalize_tono(tono)
+        if effective is not None:
+            data["tono"] = effective
+
+    # difinoj/uzoj
+    if clear_difinoj:
+        data["difinoj"] = []
+        data["uzoj"] = []
+    elif difinoj is not None:
+        parsed_difinoj: list[str] = []
+        parsed_uzoj: list[str] = []
+        for raw in difinoj:
+            d, u = split_difino_uzo(raw)
+            parsed_difinoj.append(d)
+            parsed_uzoj.append(u)
+        data["difinoj"] = parsed_difinoj
+        data["uzoj"] = parsed_uzoj
+
+    if clear_uzoj:
+        data["uzoj"] = []
+    elif uzoj is not None:
+        existing_uzoj = existing.get("uzoj") or []
+        if isinstance(existing_uzoj, list):
+            data["uzoj"] = existing_uzoj + list(uzoj)
+        else:
+            data["uzoj"] = list(uzoj)
+
+    # etikedoj
+    if clear_etikedoj:
+        data["etikedoj"] = {}
+    elif etikedoj is not None:
+        data["etikedoj"] = parse_etikedoj(etikedoj)
+
+    # ligiloj (clear only — full management deferred to A-core #18/#19)
+    if clear_ligiloj:
+        data["ligiloj"] = []
+
     if not data:
-        error(tr("Neniuj sxangoj", "No changes", "Aucun changement"))
+        error(tr_multi("Neniuj sxangoj", "No changes", "Aucun changement"))
         raise typer.Exit(1)
-    
+
     entry = service.update(uuid, data)
-    info(tr(f"Modifikas {uuid}", f"Modified {uuid}", f"Modifie {uuid}"))
+    info(tr_multi(f"Modifikas {uuid}", f"Modified {uuid}", f"Modifie {uuid}"))
 
 
 @app.command("forigi")
@@ -176,7 +329,7 @@ def forigi(
         False,
         "--hard",
         "-H",
-        help=tr("Permanent delete (no trash)", "Permanent delete (no trash)", "Suppression permanente"),
+        help=tr_multi("Permanent delete (no trash)", "Permanent delete (no trash)", "Suppression permanente"),
     ),
 ) -> None:
     """Delete a word entry."""
@@ -184,16 +337,16 @@ def forigi(
     
     existing = service.get(uuid)
     if not existing:
-        error(tr(f"Vorto {uuid} ne trovitas", f"Word {uuid} not found", f"Mot {uuid} non trouve"))
+        error(tr_multi(f"Vorto {uuid} ne trovitas", f"Word {uuid} not found", f"Mot {uuid} non trouve"))
         raise typer.Exit(1)
     
     soft = not hard
     service.delete(uuid, soft=soft)
     
     if soft:
-        info(tr(f"Forigas {uuid} (sxoveblas)", f"Deleted {uuid} (soft)", f"Supprime {uuid} ( mou)"))
+        info(tr_multi(f"Forigas {uuid} (sxoveblas)", f"Deleted {uuid} (soft)", f"Supprime {uuid} ( mou)"))
     else:
-        info(tr(f"Forigas {uuid} (permanenta)", f"Deleted {uuid} (permanent)", f"Supprime {uuid} (permanent)"))
+        info(tr_multi(f"Forigas {uuid} (permanenta)", f"Deleted {uuid} (permanent)", f"Supprime {uuid} (permanent)"))
 
 
 @app.command("malfari")
@@ -203,11 +356,11 @@ def malfari() -> None:
     result = service.undo()
     
     if not result:
-        info(tr("Nenio por malfari", "Nothing to undo", "Rien a defaire"))
+        info(tr_multi("Nenio por malfari", "Nothing to undo", "Rien a defaire"))
         return
     
     op_type = result.get("operation", "unknown")
-    info(tr(f"Malfaris {op_type}", f"Undid {op_type}", f"Defait {op_type}"))
+    info(tr_multi(f"Malfaris {op_type}", f"Undid {op_type}", f"Defait {op_type}"))
 
 
 @app.command("rubujo")
@@ -216,7 +369,7 @@ def rubujo(
         20,
         "--limit",
         "-l",
-        help=tr("Limit results", "Limit results", "Limiter les resultats"),
+        help=tr_multi("Limit results", "Limit results", "Limiter les resultats"),
     ),
 ) -> None:
     """List entries in trash."""
@@ -224,7 +377,7 @@ def rubujo(
     entries = service.get_trash(limit=limit)
     
     if not entries:
-        info(tr("Rubujo estas cxirkau", "Trash is empty", "Corbeille vide"))
+        info(tr_multi("Rubujo estas cxirkau", "Trash is empty", "Corbeille vide"))
         return
     
     for entry in entries:
@@ -233,7 +386,7 @@ def rubujo(
         forigita = entry.get("forigita_je", "")
         console.print(f"[cyan]{uuid}[/] [bold]{teksto}[/] [dim]{forigita}[/]")
     
-    info(tr(f"{len(entries)} en rubujo", f"{len(entries)} in trash", f"{len(entries)} dans la corbeille"))
+    info(tr_multi(f"{len(entries)} en rubujo", f"{len(entries)} in trash", f"{len(entries)} dans la corbeille"))
 
 
 @app.command("restaurigi")
@@ -245,10 +398,10 @@ def restaurigi(
     
     entry = service.restore(uuid)
     if not entry:
-        error(tr(f"Vorto {uuid} ne trovitas en rubujo", f"Word {uuid} not found in trash", f"Mot {uuid} non trouve dans la corbeille"))
+        error(tr_multi(f"Vorto {uuid} ne trovitas en rubujo", f"Word {uuid} not found in trash", f"Mot {uuid} non trouve dans la corbeille"))
         raise typer.Exit(1)
     
-    info(tr(f"Restaurigis {uuid}", f"Restored {uuid}", f"Restored {uuid}"))
+    info(tr_multi(f"Restaurigis {uuid}", f"Restored {uuid}", f"Restored {uuid}"))
 
 
 @app.command("senrubujigi")
@@ -257,24 +410,24 @@ def senrubujigi(
         30,
         "--days",
         "-d",
-        help=tr("Delete entries older than days", "Delete entries older than days", "Supprimer les entrees plus anciennes que jours"),
+        help=tr_multi("Delete entries older than days", "Delete entries older than days", "Supprimer les entrees plus anciennes que jours"),
     ),
 ) -> None:
     """Permanently delete entries from trash older than specified days."""
     service = get_service()
     
     count = service.empty_trash(days=days)
-    info(tr(f"Forigis {count} el rubujo", f"Deleted {count} from trash", f"Supprime {count} de la corbeille"))
+    info(tr_multi(f"Forigis {count} el rubujo", f"Deleted {count} from trash", f"Supprime {count} de la corbeille"))
 
 
 @app.command("importi")
 def importi(
-    path: Path = typer.Argument(..., help=tr("Path to import file", "Path to import file", "Chemin du fichier a importer")),
+    path: Path = typer.Argument(..., help=tr_multi("Path to import file", "Path to import file", "Chemin du fichier a importer")),
     password: Optional[str] = typer.Option(
         None,
         "--password",
         "-p",
-        help=tr("Decryption password", "Decryption password", "Mot de passe de decryptage"),
+        help=tr_multi("Decryption password", "Decryption password", "Mot de passe de decryptage"),
     ),
 ) -> None:
     """Import word entries from JSON file."""
@@ -283,7 +436,7 @@ def importi(
     try:
         records = import_json(path, decryption_password=password)
     except Exception as e:
-        error(tr(f"Importo fiaskis: {e}", f"Import failed: {e}", f"Echec de l'importation: {e}"))
+        error(tr_multi(f"Importo fiaskis: {e}", f"Import failed: {e}", f"Echec de l'importation: {e}"))
         raise typer.Exit(1)
     
     count = 0
@@ -294,23 +447,23 @@ def importi(
         except Exception:
             pass  # Skip duplicates/errors
     
-    info(tr(f"Importis {count} vortojn", f"Imported {count} words", f"Importe {count} mots"))
+    info(tr_multi(f"Importis {count} vortojn", f"Imported {count} words", f"Importe {count} mots"))
 
 
 @app.command("eksporti")
 def eksporti(
-    path: Path = typer.Argument(..., help=tr("Path to export file", "Path to export file", "Chemin du fichier d'exportation")),
+    path: Path = typer.Argument(..., help=tr_multi("Path to export file", "Path to export file", "Chemin du fichier d'exportation")),
     formato: str = typer.Option(
         "json",
         "--format",
         "-f",
-        help=tr("Format: json, toml", "Format: json, toml", "Format: json, toml"),
+        help=tr_multi("Format: json, toml", "Format: json, toml", "Format: json, toml"),
     ),
     password: Optional[str] = typer.Option(
         None,
         "--password",
         "-p",
-        help=tr("Encryption password", "Encryption password", "Mot de passe de chiffrement"),
+        help=tr_multi("Encryption password", "Encryption password", "Mot de passe de chiffrement"),
     ),
 ) -> None:
     """Export word entries to JSON or TOML file."""
@@ -324,10 +477,10 @@ def eksporti(
         else:
             export_json(path, entries, encryption_password=password)
     except Exception as e:
-        error(tr(f"Eksporto fiaskis: {e}", f"Export failed: {e}", f"Echec de l'exportation: {e}"))
+        error(tr_multi(f"Eksporto fiaskis: {e}", f"Export failed: {e}", f"Echec de l'exportation: {e}"))
         raise typer.Exit(1)
     
-    info(tr(f"Eksportis {len(entries)} vortojn al {path}", f"Exported {len(entries)} words to {path}", f"Exporte {len(entries)} mots vers {path}"))
+    info(tr_multi(f"Eksportis {len(entries)} vortojn al {path}", f"Exported {len(entries)} words to {path}", f"Exporte {len(entries)} mots vers {path}"))
 
 
 @app.command("serchi")
@@ -337,13 +490,13 @@ def serchi(
         False,
         "--fuzzy",
         "-f",
-        help=tr("Enable fuzzy matching", "Enable fuzzy matching", "Activer la recherche floue"),
+        help=tr_multi("Enable fuzzy matching", "Enable fuzzy matching", "Activer la recherche floue"),
     ),
     limit: Optional[int] = typer.Option(
         20,
         "--limit",
         "-l",
-        help=tr("Limit results", "Limit results", "Limiter les resultats"),
+        help=tr_multi("Limit results", "Limit results", "Limiter les resultats"),
     ),
 ) -> None:
     """Search word entries using FTS5 full-text search."""
@@ -351,7 +504,7 @@ def serchi(
     entries = service.search_advanced(query, fuzzy=fuzzy, limit=limit)
     
     if not entries:
-        info(tr("Neniuj rezultoj", "No results", "Aucun resultat"))
+        info(tr_multi("Neniuj rezultoj", "No results", "Aucun resultat"))
         return
     
     for entry in entries:
@@ -359,7 +512,7 @@ def serchi(
         teksto = entry.get("teksto", "")
         console.print(f"[cyan]{uuid}[/] [bold]{teksto}[/]")
     
-    info(tr(f"{len(entries)} rezultoj", f"{len(entries)} results", f"{len(entries)} resultats"))
+    info(tr_multi(f"{len(entries)} rezultoj", f"{len(entries)} results", f"{len(entries)} resultats"))
 
 
 __all__ = ["app"]
