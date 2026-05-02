@@ -1,5 +1,9 @@
 # A-vorto
 
+## Context
+
+For architecture and API reference, see [A-workspace](./workspace/).
+
 A-vorto - personal wordbook (vortaro) microapp
 
 ## Install
