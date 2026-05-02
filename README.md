@@ -32,6 +32,16 @@ A vorto ls           # List all word entries
 A vorto vidi <uuid>  # View a word entry
 ```
 
+## Testing
+
+```bash
+cd A-vorto
+uv venv .venv && uv pip install pytest pytest-mock typer rich --python .venv/bin/python
+PYTHONPATH=../A-core/src:src .venv/bin/python -m pytest tests/
+```
+
+**23 tests passing** (test_cli.py, test_service.py, test_storage.py)
+
 ## About
 
 A-vorto is a plugin for the [A](https://github.com/Ron-RONZZ-org/A-core/) framework.

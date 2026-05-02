@@ -66,3 +66,21 @@ src/A_vorto/
 - Don't use `print()` — use `A` output functions
 - Don't hardcode paths — use `A.core.paths`
 - Don't implement utilities that should be in core
+
+## Testing
+
+```bash
+cd A-vorto
+uv venv .venv && uv pip install pytest pytest-mock typer rich --python .venv/bin/python
+PYTHONPATH=../A-core/src:src .venv/bin/python -m pytest tests/
+```
+
+### Test Coverage
+
+| Module | Tests | Description |
+|--------|-------|-------------|
+| `test_cli.py` | 7 | CLI commands via CliRunner |
+| `test_service.py` | 9 | CRUDService operations |
+| `test_storage.py` | 5 | SQLite storage layer |
+
+**Total: 23 tests**
