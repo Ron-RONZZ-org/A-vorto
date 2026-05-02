@@ -41,7 +41,7 @@ CREATE INDEX IF NOT EXISTS idx_vorto_kategorio ON vorto(kategorio);
 
 def ensure_dirs() -> None:
     """Ensure data directory exists."""
-    _ensure_dirs(_DATA_DIR)
+    _DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def get_db() -> SQLiteDB:
