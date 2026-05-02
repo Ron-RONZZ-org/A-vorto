@@ -6,8 +6,8 @@ from typing import Optional
 
 import typer
 
-from A import error, info
-from A.console import console, tr
+from A import error, info, tr
+from A.utils.output import console
 
 from A_vorto.service import get_service
 
