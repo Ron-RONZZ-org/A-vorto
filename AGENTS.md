@@ -1,0 +1,66 @@
+# AGENTS.md — Rules for A-vorto
+
+This file extends root A-core AGENTS.md for the A-vorto plugin.
+
+## Relationship to A-core
+
+**A-vorto depends on A-core** for:
+- `A` package imports (i18n, output, subprocess, SQLite)
+- Plugin discovery via entry points
+- Shared utilities
+
+**All source code must import from `A`, never duplicate utilities.**
+
+## Dependency on Other A Plugins
+
+In autish, vorto and encik share data (`ligilo` relations). In A:
+
+- **A-vorto should detect A-encik at runtime:**
+  ```python
+  try:
+      import A_encik
+  except ImportError:
+      # Handle gracefully - offer to install
+  ```
+
+- **Never import at module load time** — detect at call time, not import time
+- **Use dynamic imports** for optional cross-plugin features
+
+## If You Need Something in Core
+
+If you need a utility that should be in A-core:
+
+1. **Search existing issues** on [A-core](https://github.com/Ron-RONZZ-org/A-core/issues)
+2. **Create an issue** describing the need
+3. **Wait for core enhancement** before implementing locally
+4. **Use feature detection** when available
+
+**Don't just add it locally** — the whole point of A is shared utilities.
+
+## Architecture
+
+```
+src/A_vorto/
+├── __init__.py       # Plugin exports
+├── cli.py           # Typer app
+├── service.py       # Business logic
+└── data/
+    └── storage.py  # SQLite (uses A.data.base)
+```
+
+## Code Standards
+
+1. Use `tr()` for all user-facing strings
+2. Use `error()` for errors, `info()` for info
+3. Type hints on all public functions
+4. Docstrings on all public functions
+5. Tests required for all modules
+6. Use WAL mode for SQLite
+
+## What to Avoid
+
+- Don't duplicate A-core utilities
+- Don't skip i18n (use `tr()`)
+- Don't use `print()` — use `A` output functions
+- Don't hardcode paths — use `A.core.paths`
+- Don't implement utilities that should be in core
