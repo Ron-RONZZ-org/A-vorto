@@ -10,7 +10,7 @@ import typer
 from A import error, info, tr_multi
 from A.core.import_ import import_json
 from A.core.export import export_json, export_toml
-from A.utils.output import console
+from A.utils.output import console, print_table
 
 from A_vorto.service import get_service
 
@@ -51,16 +51,15 @@ def list(
     """List all word entries."""
     service = get_service()
     entries = service.list(order_by=order_by, desc=desc, limit=limit)
-    
-    if not entries:
-        info(tr_multi("Neniuj videblas", "No entries found", "Aucune entree"))
-        return
-    
-    for entry in entries:
-        uuid = entry.get("uuid", "")[:8]
-        teksto = entry.get("teksto", "")
-        kategorio = entry.get("kategorio", "")
-        console.print(f"[cyan]{uuid}[/] [bold]{teksto}[/] {kategorio}")
+
+    columns = [
+        {"header": "UUID", "key": "uuid", "style": "dim", "width": 10},
+        {"header": "Teksto", "key": "teksto"},
+        {"header": "Lingvo", "key": "lingvo"},
+        {"header": "Kategorio", "key": "kategorio"},
+    ]
+
+    print_table(columns, entries, title=tr_multi("Vortoj", "Words", "Mots"))
 
 
 @app.command("vidi")
