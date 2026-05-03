@@ -33,6 +33,14 @@ _MIGRATIONS: list[tuple[int, str, list[str]]] = [
             "CREATE INDEX IF NOT EXISTS idx_vorto_kreita_je ON vorto(kreita_je)",
         ],
     ),
+    # Migration 002: Add forigita_je column for import tracking
+    (
+        2,
+        "add forigita_je column",
+        [
+            "ALTER TABLE vorto ADD COLUMN forigita_je TEXT",
+        ],
+    ),
 ]
 
 
