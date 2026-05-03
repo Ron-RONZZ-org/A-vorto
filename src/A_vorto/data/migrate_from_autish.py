@@ -83,7 +83,7 @@ def migrate() -> dict:
             migrated += 1
             
         except Exception as e:
-            errors.append(f"{row.get('uuid', 'unknown')}: {e}")
+            errors.append(f"{row['uuid']}: {e}")
     
     legacy.close()
     

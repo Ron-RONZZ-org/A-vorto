@@ -123,7 +123,7 @@ def vidi(
             if isinstance(tipo, list):
                 display_tipo = ", ".join(str(t) for t in tipo)
             else:
-            display_tipo = str(tipo)
+                display_tipo = str(tipo)
         else:
             display_tipo = tr_multi("(malplena)", "(empty)", "(vide)")
         console.print(f"[bold cyan]Tipo:[/] {display_tipo}")
