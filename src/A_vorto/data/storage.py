@@ -10,6 +10,8 @@ from A.data.base import SQLiteDB
 from A.data.search import FTSConfig
 from A.utils.normalize import fold_search_text
 
+from A_vorto.data.migrate import migrate
+
 _DATA_DIR: Path = Path.home() / ".local" / "share" / "A"
 _DB_FILE: Path = _DATA_DIR / "vorto.db"
 
@@ -34,6 +36,13 @@ CREATE TABLE IF NOT EXISTS vorto (
 );
 """
 
+_CREATE_SCHEMA_VERSION = """
+CREATE TABLE IF NOT EXISTS _schema_version (
+    version INTEGER PRIMARY KEY,
+    applied_je TEXT NOT NULL
+);
+"""
+
 _CREATE_INDEXES = """
 CREATE INDEX IF NOT EXISTS idx_vorto_teksto ON vorto(teksto);
 CREATE INDEX IF NOT EXISTS idx_vorto_lingvo ON vorto(lingvo);
@@ -51,9 +60,11 @@ def get_db() -> SQLiteDB:
     ensure_dirs()
     db = SQLiteDB(_DB_FILE)
     db.execute(_CREATE_VORTO)
+    db.execute(_CREATE_SCHEMA_VERSION)
     for stmt in _CREATE_INDEXES.strip().split(";"):
         if stmt.strip():
             db.execute(stmt)
+    migrate(db)
     return db
 
 
