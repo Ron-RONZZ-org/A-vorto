@@ -581,9 +581,9 @@ def eksporti(
     info(tr_multi(f"Eksportis {len(entries)} vortojn al {path}", f"Exported {len(entries)} words to {path}", f"Exporte {len(entries)} mots vers {path}"))
 
 
-@app.command("serchi")
-@app.command("serci", deprecated=True)
-def serchi(
+@app.command("serci")
+@app.command("serchi", deprecated=True)
+def serci(
     query: str,
     fuzzy: bool = typer.Option(
         False,
