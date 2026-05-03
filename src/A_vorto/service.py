@@ -128,7 +128,7 @@ class VortoService:
             "incoming": get_incoming("vorto", uuid),
         }
 
-def get_references(self, entry: dict) -> list:
+    def get_references(self, entry: dict) -> list:
         """Get cross-references from text fields (difinoj, uzoj).
         
         Parses vt#uuid and ec#uuid references in entry text fields
