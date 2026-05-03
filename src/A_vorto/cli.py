@@ -10,6 +10,7 @@ import typer
 from A import error, info, tr_multi
 from A.core.import_ import import_json
 from A.core.export import export_json, export_toml
+from A.utils import copy_to_clipboard
 from A.utils.output import console, print_table
 
 from A_vorto.service import get_service
@@ -169,11 +170,10 @@ def vidi(
     
     # Handle clipboard copy
     if kopii or semantika_kopii:
-        import pyperclip
         if kopii:
-            pyperclip.copy(f"#{entry['uuid'][:8]}")
+            copy_to_clipboard(f"#{entry['uuid'][:8]}")
         if semantika_kopii:
-            pyperclip.copy(f"[{entry['teksto']}](#{entry['uuid'][:8]})")
+            copy_to_clipboard(f"[{entry['teksto']}](#{entry['uuid'][:8]})")
 
     # Display entry
     console.print(f"[bold cyan]UUID:[/] {entry.get('uuid')}")
@@ -401,13 +401,10 @@ def aldoni(
     
     # Handle clipboard copy options
     if kopii or semantika_kopii:
-        import pyperclip
         if kopii:
-            pyperclip.copy(f"#{entry['uuid'][:8]}")
-            info(tr_multi("Kopiita al tondujo", "Copied to clipboard", "Copie dans le presse-papiers"))
+            copy_to_clipboard(f"#{entry['uuid'][:8]}")
         if semantika_kopii:
-            pyperclip.copy(f"[{entry['teksto']}](#{entry['uuid'][:8]})")
-            info(tr_multi("Kopiita al tondujo (semantika)", "Copied to clipboard (semantic)", "Copie dans le presse-papiers (semantique)"))
+            copy_to_clipboard(f"[{entry['teksto']}](#{entry['uuid'][:8]})")
 
 
 @app.command("modifi")
