@@ -48,7 +48,8 @@ src/A_vorto/
 ├── service.py       # CRUDService with FTS5
 ├── utils.py         # Type maps, parsers, normalizers (TIPO_MAP, TONO_MAP, difino/uzo parsing, etikedoj, kategorio auto-detect)
 └── data/
-    └── storage.py  # SQLite (uses A.data.base + FTSConfig)
+    ├── storage.py  # SQLite (uses A.data.base + FTSConfig)
+    └── migrate.py # Schema migrations
 ```
 
 ## Search
