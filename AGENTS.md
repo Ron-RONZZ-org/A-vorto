@@ -3,6 +3,45 @@ This file extends [A-workspace](./workspace/AGENTS.md).
 
 This file extends root A-core AGENTS.md for the A-vorto plugin.
 
+## User Experience Consistency with autish-legacy
+
+**CRITICAL**: A-vorto must maintain feature parity and command compatibility with autish-legacy (`autish/commands/vorto.py`) for user experience continuity.
+
+### Command Compatibility Rule
+
+Before adding new CLI commands or changing existing ones:
+1. **Check autish-legacy** for the equivalent command
+2. **Match the command signature exactly** - same args, same options
+3. **Only add A-specific features** when autish-legacy doesn't have them
+
+### Command Mapping (autish-legacy → A)
+
+| autish-legacy | A-vorto | Status |
+|--------------|---------|--------|
+| `aldoni` | `aldoni` | ✓ exact match required |
+| `vidi` | `vidi` | ✓ exact match required |
+| `modifi` | `modifi` | ✓ exact match required |
+| `serci` | `serci` | ✓ exact match required |
+| `forigi` | `forigi` | ✓ exact match required |
+| `malfari` | `malfari` | ✓ exact match required |
+| `eksporti` | `eksporti` | ✓ exact match required |
+| `importi` | `importi` | ✓ exact match required |
+| (none) | `list` | A-only bonus |
+| (none) | `rubujo`, `restaurigi`, `senrubujigi` | A-only bonus |
+
+### Output Format
+
+- Match autish-legacy console output format exactly
+- Use same Rich styling conventions
+- Match table columns and widths
+
+### Data Paths
+
+- autish-legacy: `~/.local/share/autish/vorto.db`
+- A: `~/.local/share/A/vorto.db`
+
+Migration must handle path changes transparently.
+
 ## Relationship to A-core
 
 **A-vorto depends on A-core** for:
