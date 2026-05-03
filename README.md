@@ -72,6 +72,13 @@ PYTHONPATH=../A-core/src:src .venv/bin/python -m pytest tests/
 
 **23 tests passing** (test_cli.py, test_service.py, test_storage.py)
 
+## Documentation
+
+Full documentation available at: **https://a-vorto.readthedocs.io**
+
+- **Read the Docs**: Installation, commands, features, API reference
+- **Man pages**: `man vorto` (see `docs/man/vorto.1.md`)
+
 ## About
 
 A-vorto is a plugin for the [A](https://github.com/Ron-RONZZ-org/A-core/) framework.
