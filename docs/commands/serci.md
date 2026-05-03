@@ -1,11 +1,11 @@
-# vorto serchi
+# vorto serci
 
 Full-text search using SQLite FTS5.
 
 ## Usage
 
 ```bash
-A vorto serchi <QUERY> [OPTIONS]
+A vorto serci <QUERY> [OPTIONS]
 ```
 
 ## Arguments
@@ -30,31 +30,31 @@ A vorto serchi <QUERY> [OPTIONS]
 
 ```bash
 # Basic full-text search
-A vorto serchi "hello"
+A vorto serci "hello"
 
 # Search with language filter
-A vorto serchi "hello" --lingvo en
+A vorto serci "hello" --lingvo en
 
 # Search with category filter
-A vorto serchi "hello" --kategorio vorto
+A vorto serci "hello" --kategorio vorto
 
 # Search with multiple filters
-A vorto serchi "hello" --lingvo eo --kategorio frazo
+A vorto serci "hello" --lingvo eo --kategorio frazo
 
 # Fuzzy search (typo tolerance)
-A vorto serchi "heelo" --fuzzy
+A vorto serci "heelo" --fuzzy
 
 # Limit results
-A vorto serchi "hello" --limit 5
+A vorto serci "hello" --limit 5
 
 # Filter by type
-A vorto serchi "hello" --tipo su
+A vorto serci "hello" --tipo su
 
 # Filter by theme
-A vorto serchi "hello" --temo gramatiko
+A vorto serci "hello" --temo gramatiko
 
 # Filter by tonality
-A vorto serchi "hello" --tono nf
+A vorto serci "hello" --tono nf
 ```
 
 ## Search Features
