@@ -1,0 +1,56 @@
+# mkdocs.yml for A-vorto
+
+site_name: A-vorto
+site_description: "A — personal wordbook microapp"
+site_author: "Ron"
+repo_url: "https://github.com/Ron-RONZZ-org/A-vorto"
+edit_uri: "edit/main/docs/"
+
+# Documentation theme
+theme:
+  name: "material"
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: teal
+      accent: cyan
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: teal
+      accent: cyan
+
+# Extensions
+markdown_extensions:
+  - toc:
+      permalink: true
+  - attr_list
+  - md_in_html
+
+# Navigation
+nav:
+  - Home: index.md
+  - Installation: installation.md
+  - Commands:
+      - Overview: commands.md
+      - list: commands/list.md
+      - vidi: commands/vidi.md
+      - aldoni: commands/aldoni.md
+      - modifi: commands/modifi.md
+      - forigi: commands/forigi.md
+      - serchi: commands/serchi.md
+      - malfari: commands/malfari.md
+      - rubujo: commands/rubujo.md
+      - importi/eksporti: commands/import-export.md
+  - Features:
+      - Search: features/search.md
+      - Links & References: features/links.md
+      - Undo System: features/undo.md
+  - API Reference: api.md
+
+# Plugins
+plugins:
+  - search:
+      separator: '[\s\-\.]+'
+
+# Copyright
+copyright: "Copyright &copy; 2024 Ron — GPL-3.0-only"
