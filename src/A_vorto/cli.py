@@ -14,6 +14,20 @@ from A.utils.output import console, print_table
 
 from A_vorto.service import get_service
 
+
+def _display_results(entries: list[dict]) -> None:
+    """Display search results in table format."""
+    if not entries:
+        info(tr_multi("Neniuj rezultoj", "No results", "Aucun resultat"))
+        return
+    
+    columns = [
+        {"header": "UUID", "key": "uuid", "style": "dim", "width": 8},
+        {"header": "Teksto", "key": "teksto"},
+        {"header": "Lingvo", "key": "lingvo"},
+    ]
+    print_table(columns, entries)
+
 app = typer.Typer(
     name="vorto",
     help=tr_multi(
@@ -64,34 +78,102 @@ def list(
 
 @app.command("vidi")
 def vidi(
-    uuid: str,
+    uid: str | None = typer.Argument(
+        None,
+        help=tr_multi("UUID (or prefix) of entry to view. Omit to list latest 50.", "UUID (or prefix) of entry to view. Omit to list latest 50.", "UUID (ou prefixe) de l'entree. Omettre pour lister les 50 dernieres."),
+    ),
+    teksto: str | None = typer.Option(
+        None,
+        "-T",
+        "--teksto",
+        help=tr_multi("Look up by title/text instead of UUID", "Look up by title/text instead of UUID", "Rechercher par titre/texte au lieu de UUID"),
+    ),
+    inversa: bool = typer.Option(
+        False,
+        "-i",
+        "--inversa",
+        help=tr_multi("List oldest 50 first (only without UUID)", "List oldest 50 first (only without UUID)", "Lister les 50 plus anciennes d'abord (sans UUID)"),
+    ),
+    cxio: bool = typer.Option(
+        False,
+        "-a",
+        "--cxio",
+        help=tr_multi("Show all fields (including dates)", "Show all fields (including dates)", "Afficher tous les champs (y compris les dates)"),
+    ),
     html: bool = typer.Option(
         False,
+        "-H",
         "--html",
-        "-h",
-        help=tr_multi("Open markdown as HTML preview in browser", "Open markdown as HTML preview in browser", "Ouvrir le markdown en apercu HTML dans le navigateur"),
+        help=tr_multi("Open as HTML preview in browser", "Open as HTML preview in browser", "Ouvrir en apercu HTML dans le navigateur"),
     ),
     ref: bool = typer.Option(
         False,
-        "--ref",
         "-r",
+        "--ref",
         help=tr_multi("Show linked entries and references", "Show linked entries and references", "Montrer les entrees liees et les references"),
     ),
-    show_all: bool = typer.Option(
+    kopii: bool = typer.Option(
         False,
-        "--show-all",
-        "-a",
-        "--cxio",
-        help=tr_multi("Show all fields (including empty)", "Show all fields (including empty)", "Afficher tous les champs (y compris vides)"),
+        "-k",
+        "--kopii",
+        help=tr_multi("Copy #uuid to clipboard", "Copy #uuid to clipboard", "Copier #uuid dans le presse-papiers"),
+    ),
+    semantika_kopii: bool = typer.Option(
+        False,
+        "-sk",
+        "--semantika-kopii",
+        help=tr_multi("Copy [teksto](#uuid) to clipboard", "Copy [teksto](#uuid) to clipboard", "Copier [texte](#uuid) dans le presse-papiers"),
     ),
 ) -> None:
-    """View a word entry by UUID."""
-    service = get_service()
-    entry = service.get(uuid)
-
-    if not entry:
-        error(tr_multi(f"Vorto {uuid} ne trovitas", f"Word {uuid} not found", f"Mot {uuid} non trouve"))
+    """View a word entry, or list latest 50 entries when called without argument."""
+    # Validate arguments
+    if uid is not None and teksto is not None:
+        error(tr_multi("Use either UUID or --teksto, not both", "Use either UUID or --teksto, not both", "Utiliser UUID ou --teksto, pas les deux"))
         raise typer.Exit(1)
+    
+    service = get_service()
+    
+    # Handle clipboard mutual exclusivity
+    if kopii and semantika_kopii:
+        error(tr_multi("Use only one of --kopii or --semantika-kopii", "Use only one of --kopii or --semantika-kopii", "Utiliser une seule option"))
+        raise typer.Exit(1)
+    
+    # Handle clipboard with invalid UUID
+    if (kopii or semantika_kopii) and uid is None:
+        error(tr_multi("--kopii/--semantika-kopii requires UUID", "--kopii/--semantika-kopii requires UUID", "--kopii/--semantika-kopii necessite UUID"))
+        raise typer.Exit(1)
+    
+    # No UUID - list latest/oldest 50
+    if uid is None:
+        if teksto:
+            # Look up by title
+            entry = service.find_by_text_prefix(teksto)
+            if not entry:
+                error(tr_multi(f"Vorto {teksto} ne trovitas", f"Word {teksto} not found", f"Mot {teksto} non trouve"))
+                raise typer.Exit(1)
+        else:
+            # List entries
+            entries = service.list(order_by="kreita_je", desc=not inversa, limit=50)
+            info(tr_multi(f"{len(entries)} rezulto(j)", f"{len(entries)} result(s)", f"{len(entries)} resultat(s)"))
+            _display_results(entries)
+            return
+    
+    lookup_uid = uid[1:] if uid and uid.startswith("#") else uid
+    entry = service.get(lookup_uid)
+    
+    if not entry:
+        # Try fuzzy/closest matches
+        # For now, just error
+        error(tr_multi(f"Vorto {uid} ne trovitas", f"Word {uid} not found", f"Mot {uid} non trouve"))
+        raise typer.Exit(1)
+    
+    # Handle clipboard copy
+    if kopii or semantika_kopii:
+        import pyperclip
+        if kopii:
+            pyperclip.copy(f"#{entry['uuid'][:8]}")
+        if semantika_kopii:
+            pyperclip.copy(f"[{entry['teksto']}](#{entry['uuid'][:8]})")
 
     # Display entry
     console.print(f"[bold cyan]UUID:[/] {entry.get('uuid')}")
@@ -230,16 +312,28 @@ def aldoni(
     teksto: str = typer.Argument(..., help=tr_multi("Word text", "Word text", "Texte du mot")),
     lingvo: Optional[str] = typer.Option(None, "--lingvo", "-l", help=tr_multi("Language", "Language", "Langue")),
     kategorio: Optional[str] = typer.Option(None, "--kategorio", "-k", help=tr_multi("Category (auto-detected if omitted)", "Category (auto-detected if omitted)", "Categorie (auto-detectee si omise)")),
-    tipo: Optional[str] = typer.Option(None, "--tipo", help=tr_multi("Type abbreviation(s), comma/semicolon-separated (e.g. su,aj)", "Type abbreviation(s), comma/semicolon-separated (e.g. su,aj)", "Abreviation(s) de type, separees par virgule/point-virgule")),
+    tipo: Optional[str] = typer.Option(None, "--tipo", "-t", help=tr_multi("Type abbreviation(s), comma/semicolon-separated (e.g. su,aj)", "Type abbreviation(s), comma/semicolon-separated (e.g. su,aj)", "Abreviation(s) de type, separees par virgule/point-virgule")),
     temo: Optional[str] = typer.Option(None, "--temo", help=tr_multi("Theme", "Theme", "Theme")),
     tono: Optional[str] = typer.Option(None, "--tono", help=tr_multi("Tonality (e.g. nf, fo, am)", "Tonality (e.g. nf, fo, am)", "Tonalite (ex. nf, fo, am)")),
-    difinoj: Optional[List[str]] = typer.Option(None, "--difino", help=tr_multi("Definition with optional usage: difino:{uzo}", "Definition with optional usage: difino:{uzo}", "Definition avec usage optionnel: difino:{uzo}")),
+    nivelo: Optional[float] = typer.Option(None, "-n", "--nivelo", help=tr_multi("Proficiency level (0.0-5.0)", "Proficiency level (0.0-5.0)", "Niveau de competence (0.0-5.0)")),
+    difinoj: Optional[List[str]] = typer.Option(None, "-d", "--difino", help=tr_multi("Definition with optional usage: difino:{uzo}", "Definition with optional usage: difino:{uzo}", "Definition avec usage optionnel: difino:{uzo}")),
     uzoj: Optional[List[str]] = typer.Option(None, "--uzo", help=tr_multi("Usage example (standalone, no paired definition)", "Usage example (standalone, no paired definition)", "Exemple d'usage (autonome, sans definition associee)")),
-    etikedoj: Optional[List[str]] = typer.Option(None, "--etikedo", help=tr_multi("Tag in key:value format", "Tag in key:value format", "Etiquette au format cle:valeur")),
-    autoro: Optional[str] = typer.Option(None, "--autoro", help=tr_multi("Author", "Author", "Auteur")),
-    verko: Optional[str] = typer.Option(None, "--verko", help=tr_multi("Work/source", "Work/source", "Oeuvre/source")),
-    nivelo: Optional[float] = typer.Option(None, "--nivelo", help=tr_multi("Proficiency level (0.0-5.0)", "Proficiency level (0.0-5.0)", "Niveau de competence (0.0-5.0)")),
-    ligiloj: Optional[List[str]] = typer.Option(None, "--ligilo", help=tr_multi("Link to UUID(s)", "Link to UUID(s)", "Lier a UUID(s)")),
+    etikedoj: Optional[List[str]] = typer.Option(None, "-e", "--etikedo", help=tr_multi("Tag in key:value format", "Tag in key:value format", "Etiquette au format cle:valeur")),
+    ligiloj: Optional[List[str]] = typer.Option(None, "-L", "--ligilo", help=tr_multi("Link to UUID(s)", "Link to UUID(s)", "Lier a UUID(s)")),
+    autoro: Optional[str] = typer.Option(None, "-A", "--autoro", help=tr_multi("Author", "Author", "Auteur")),
+    verko: Optional[str] = typer.Option(None, "-v", "--verko", help=tr_multi("Work/source (Title:Year format)", "Work/source (Title:Year format)", "Oeuvre/source (format Titre:Annee)")),
+    kopii: bool = typer.Option(
+        False,
+        "-k",
+        "--kopii",
+        help=tr_multi("Copy #uuid to clipboard", "Copy #uuid to clipboard", "Copier #uuid dans le presse-papiers"),
+    ),
+    semantika_kopii: bool = typer.Option(
+        False,
+        "-sk",
+        "--semantika-kopii",
+        help=tr_multi("Copy [teksto](#uuid) to clipboard", "Copy [teksto](#uuid) to clipboard", "Copier [texte](#uuid) dans le presse-papiers"),
+    ),
 ) -> None:
     """Add a new word entry."""
     from A_vorto.utils import (
@@ -304,6 +398,16 @@ def aldoni(
     entry = service.create(data)
     info(tr_multi(f"Aldonis {teksto}", f"Added {teksto}", f"Ajoute {teksto}"))
     console.print(f"[green]UUID:[/] {entry.get('uuid')}")
+    
+    # Handle clipboard copy options
+    if kopii or semantika_kopii:
+        import pyperclip
+        if kopii:
+            pyperclip.copy(f"#{entry['uuid'][:8]}")
+            info(tr_multi("Kopiita al tondujo", "Copied to clipboard", "Copie dans le presse-papiers"))
+        if semantika_kopii:
+            pyperclip.copy(f"[{entry['teksto']}](#{entry['uuid'][:8]})")
+            info(tr_multi("Kopiita al tondujo (semantika)", "Copied to clipboard (semantic)", "Copie dans le presse-papiers (semantique)"))
 
 
 @app.command("modifi")
@@ -583,67 +687,149 @@ def eksporti(
 @app.command("serci")
 @app.command("serchi", deprecated=True)
 def serci(
-    query: str,
-    fuzzy: bool = typer.Option(
-        False,
-        "--fuzzy",
-        "-f",
-        help=tr_multi("Enable fuzzy matching", "Enable fuzzy matching", "Activer la recherche floue"),
-    ),
-    limit: Optional[int] = typer.Option(
-        20,
-        "--limit",
-        "-l",
-        help=tr_multi("Limit results", "Limit results", "Limiter les resultats"),
-    ),
-    lingvo: Optional[str] = typer.Option(
+    teksto: str | None = typer.Argument(
         None,
-        "--lingvo",
+        help=tr_multi("Text to search (default: show all)", "Text to search (default: show all)", "Texte a rechercher (par defaut: tout afficher)"),
+    ),
+    ligilo: str | None = typer.Option(
+        None,
         "-L",
-        help=tr_multi("Filter by language", "Filter by language", "Filtrer par langue"),
+        "--ligilo",
+        help=tr_multi("Search related entries from UUID/title via links", "Search related entries from UUID/title via links", "Rechercher des entrees liees via UUID/titre"),
     ),
-    kategorio: Optional[str] = typer.Option(
+    lingvo: str | None = typer.Option(
         None,
-        "--kategorio",
-        "-k",
-        help=tr_multi("Filter by category (vorto/frazo/frazdaro)", "Filter by category (vorto/frazo/frazdaro)", "Filtrer par categorie"),
+        "-l",
+        "--lingvo",
+        help=tr_multi("Filter by language code", "Filter by language code", "Filtrer par code de langue"),
     ),
-    tipo: Optional[str] = typer.Option(
+    tipo: str | None = typer.Option(
         None,
-        "--tipo",
         "-t",
-        help=tr_multi("Filter by type (su, aj, etc.)", "Filter by type (su, aj, etc.)", "Filtrer par type"),
+        "--tipo",
+        help=tr_multi("Filter by subtype", "Filter by subtype", "Filtrer par sous-type"),
     ),
-    temo: Optional[str] = typer.Option(
+    temo: str | None = typer.Option(
         None,
         "--temo",
-        "-m",
         help=tr_multi("Filter by theme", "Filter by theme", "Filtrer par theme"),
     ),
-    tono: Optional[str] = typer.Option(
+    tono: str | None = typer.Option(
         None,
         "--tono",
-        "-T",
-        help=tr_multi("Filter by tonality (nf, fo, am)", "Filter by tonality (nf, fo, am)", "Filtrer par tonalite"),
+        help=tr_multi("Filter by tonality", "Filter by tonality", "Filtrer par tonalite"),
+    ),
+    autoro: str | None = typer.Option(
+        None,
+        "-a",
+        "--autoro",
+        help=tr_multi("Filter by author", "Filter by author", "Filtrer par auteur"),
+    ),
+    verko: str | None = typer.Option(
+        None,
+        "-v",
+        "--verko",
+        help=tr_multi("Filter by work (Title:Year format)", "Filter by work (Title:Year format)", "Filtrer par oeuvre (format Titre:Annee)"),
+    ),
+    nivelo_min: float | None = typer.Option(
+        None,
+        "--nivelo-min",
+        help=tr_multi("Minimum lexical level", "Minimum lexical level", "Niveau lexical minimum"),
+    ),
+    nivelo_max: float | None = typer.Option(
+        None,
+        "--nivelo-max",
+        help=tr_multi("Maximum lexical level", "Maximum lexical level", "Niveau lexical maximum"),
+    ),
+    dato_de: str | None = typer.Option(
+        None,
+        "--dato-de",
+        help=tr_multi("Start date YYYY-MM-DD", "Start date YYYY-MM-DD", "Date de debut AAAA-MM-JJ"),
+    ),
+    dato_gis: str | None = typer.Option(
+        None,
+        "--dato-gis",
+        help=tr_multi("End date YYYY-MM-DD", "End date YYYY-MM-DD", "Date de fin AAAA-MM-JJ"),
+    ),
+    regex: bool = typer.Option(
+        False,
+        "-r",
+        "--regex",
+        help=tr_multi("Interpret text as POSIX regex", "Interpret text as POSIX regex", "Interpreter le texte comme regex POSIX"),
+    ),
+    preciza: bool = typer.Option(
+        False,
+        "-p",
+        "--preciza",
+        help=tr_multi("Disable fuzzy fallback", "Disable fuzzy fallback", "Desactiver la recherche floue"),
+    ),
+    limo: int = typer.Option(
+        10,
+        "-lo",
+        "--limo",
+        help=tr_multi("Max results (default 10)", "Max results (default 10)", "Nombre max de resultats (defaut 10)"),
+    ),
+    ordo: str = typer.Option(
+        "graveco",
+        "-o",
+        "--ordo",
+        help=tr_multi("Order: graveco/g, dato/d, inversa-dato/id", "Order: graveco/g, dato/d, inversa-dato/id", "Ordre: graveco/g, dato/d, inversa-dato/id"),
+    ),
+    uuid: bool = typer.Option(
+        False,
+        "-u",
+        "--uuid",
+        help=tr_multi("Output only UUID list as JSON", "Output only UUID list as JSON", "Sortir uniquement la liste UUID en JSON"),
     ),
 ) -> None:
-    """Search word entries using FTS5 full-text search."""
+    """Search word entries. Without args, list entries up to --limo."""
     service = get_service()
     
     # Build filters dict from non-None values
     filters = {}
+    if ligilo:
+        # Find linked entries
+        linked_entries = []
+        # TODO: implement link-based search
     if lingvo:
         filters["lingvo"] = lingvo
-    if kategorio:
-        filters["kategorio"] = kategorio
     if tipo:
         filters["tipo"] = tipo
     if temo:
         filters["temo"] = temo
     if tono:
         filters["tono"] = tono
+    if verko:
+        filters["verko"] = verko
+    if autoro:
+        filters["autoro"] = autoro
+    if nivelo_min:
+        filters["nivelo_min"] = nivelo_min
+    if nivelo_max:
+        filters["nivelo_max"] = nivelo_max
     
-    entries = service.search_advanced(query, filters=filters, fuzzy=fuzzy, limit=limit)
+    # Handle date filters
+    if dato_de or dato_gis:
+        filters["dato_de"] = dato_de
+        filters["dato_gis"] = dato_gis
+    
+    # If no text query and no filters, list entries
+    if teksto is None and not filters:
+        entries = service.list(order_by=ordo, desc=False, limit=limo)
+    else:
+        # Use FTS search with filters
+        entries = service.search_advanced(
+            teksto or "",
+            filters=filters,
+            fuzzy=not preciza and not regex,
+            limit=limo,
+        )
+    
+    if uuid:
+        import json
+        uuids = [e["uuid"][:8] for e in entries]
+        console.print(json.dumps(uuids))
+        return
     
     if not entries:
         info(tr_multi("Neniuj rezultoj", "No results", "Aucun resultat"))

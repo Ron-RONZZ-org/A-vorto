@@ -128,7 +128,7 @@ class VortoService:
             "incoming": get_incoming("vorto", uuid),
         }
 
-    def get_references(self, entry: dict) -> list:
+def get_references(self, entry: dict) -> list:
         """Get cross-references from text fields (difinoj, uzoj).
         
         Parses vt#uuid and ec#uuid references in entry text fields
@@ -137,21 +137,31 @@ class VortoService:
         Returns:
             list of ResolvedRef objects
         """
+        from A.core.references import get_refs_in_field
         refs = []
-        for field in ["difinoj", "uzoj"]:
-            field_refs = get_refs_in_field(entry, field)
-            for ref in field_refs:
-                resolved = resolve_ref(ref.ref_type, ref.uuid)
-                refs.append(resolved)
+        for field in ("difinoj", "uzoj"):
+            field_val = entry.get(field) or []
+            if isinstance(field_val, list):
+                for item in field_val:
+                    refs.extend(get_refs_in_field(item or ""))
         return refs
 
-
-def get_service() -> VortoService:
-    """Get the singleton VortoService for vorto table with links and references."""
-    global _vorto_service
-    if _vorto_service is None:
-        _vorto_service = VortoService()
-    return _vorto_service
+    def find_by_text_prefix(self, text: str) -> dict | None:
+        """Find entry by text prefix (case-insensitive).
+        
+        Args:
+            text: Text to search for (prefix match, case-insensitive)
+            
+        Returns:
+            First matching entry or None
+        """
+        # Use SQLite LIKE for prefix match
+        db = get_db()
+        row = db.execute_one(
+            "SELECT * FROM vorto WHERE LOWER(teksto) LIKE ? ORDER BY kreita_je DESC LIMIT 1",
+            (f"{text.lower()}%",),
+        )
+        return dict(row) if row else None
 
 
 __all__ = ["get_service", "VortoService"]
