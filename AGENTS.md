@@ -111,6 +111,8 @@ A-vorto integrates the following A-core features:
 | Markdown preview | `vidi --html` | `A.core.markdown_html_view` |
 | FTS5 search | `serchi` | `CRUDService.search_advanced()` |
 | Fuzzy search | `serchi --fuzzy` | `CRUDService.search_fuzzy()` |
+| Bidirectional links | `--ligilo` on `aldoni`/`modifi` | `A.core.links` (A-core #18) |
+| Cross-references | `--ref` on `vidi` | `A.core.references` (A-core #19) |
 
 ## A-vorto specific features
 
@@ -124,9 +126,9 @@ A-vorto integrates the following A-core features:
 | Multiline text normalization | automatic | `utils.normalize_multiline_text()` |
 | Clear-* flags on `modifi` | `--clear-difinoj` etc. | Explicit reset of JSON arrays/null fields |
 
-Pending A-core implementation:
-- Bidirectional links (see A-core #18)
-- Cross-references `vt#uuid` (see A-core #19)
+Implemented (A-core #18, #19):
+- Bidirectional links via `--ligilo` on `aldoni`/`modifi` and `--ref` on `vidi`
+- Cross-references `vt#uuid` parsed from text fields (difinoj, uzoj)
 
 ## Testing
 
