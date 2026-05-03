@@ -72,6 +72,12 @@ def vidi(
         "-h",
         help=tr_multi("Open markdown as HTML preview in browser", "Open markdown as HTML preview in browser", "Ouvrir le markdown en apercu HTML dans le navigateur"),
     ),
+    ref: bool = typer.Option(
+        False,
+        "--ref",
+        "-r",
+        help=tr_multi("Show linked entries and references", "Show linked entries and references", "Montrer les entrees liees et les references"),
+    ),
 ) -> None:
     """View a word entry by UUID."""
     service = get_service()
@@ -133,6 +139,34 @@ def vidi(
         for ref in ligiloj:
             console.print(f"  {ref}")
 
+    # Show linked entries and references if --ref flag is set
+    if ref:
+        # Get links from A.core.links
+        links = service.get_linked_entries(uuid)
+        
+        if links["outgoing"]:
+            console.print("[bold cyan]Ligiloj (elirantaj):[/]")
+            for link in links["outgoing"]:
+                target = service.get(link.target_id)
+                title = target.get("teksto", "") if target else link.target_id[:8]
+                console.print(f"  → {title} ({link.target_id[:8]})")
+        
+        if links["incoming"]:
+            console.print("[bold cyan]Ligiloj (envenantaj):[/]")
+            for link in links["incoming"]:
+                source = service.get(link.source_id)
+                title = source.get("teksto", "") if source else link.source_id[:8]
+                console.print(f"  ← {title} ({link.source_id[:8]})")
+        
+        # Parse cross-references from text fields
+        refs = service.get_references(entry)
+        if refs:
+            console.print("[bold cyan]Referencoj:[/]")
+            for r in refs:
+                display = r.title or f"{r.ref_type}#{r.uuid[:8]}"
+                exists_mark = "[green]✓[/]" if r.exists else "[red]?[/]"
+                console.print(f"  {exists_mark} {display}")
+
     # Open browser preview if requested
     if html and entry.get("teksto"):
         from A.core.markdown_html_view import preview_markdown
@@ -156,6 +190,7 @@ def aldoni(
     autoro: Optional[str] = typer.Option(None, "--autoro", help=tr_multi("Author", "Author", "Auteur")),
     verko: Optional[str] = typer.Option(None, "--verko", help=tr_multi("Work/source", "Work/source", "Oeuvre/source")),
     nivelo: Optional[float] = typer.Option(None, "--nivelo", help=tr_multi("Proficiency level (0.0-5.0)", "Proficiency level (0.0-5.0)", "Niveau de competence (0.0-5.0)")),
+    ligiloj: Optional[List[str]] = typer.Option(None, "--ligilo", help=tr_multi("Link to UUID(s)", "Link to UUID(s)", "Lier a UUID(s)")),
 ) -> None:
     """Add a new word entry."""
     from A_vorto.utils import (
@@ -213,6 +248,10 @@ def aldoni(
     if etikedoj:
         data["etikedoj"] = parse_etikedoj(etikedoj)
 
+    # Add ligiloj (links to other entries)
+    if ligiloj:
+        data["ligiloj"] = list(ligiloj)
+
     entry = service.create(data)
     info(tr_multi(f"Aldonis {teksto}", f"Added {teksto}", f"Ajoute {teksto}"))
     console.print(f"[green]UUID:[/] {entry.get('uuid')}")
@@ -238,6 +277,8 @@ def modifi(
     clear_etikedoj: bool = typer.Option(False, "--clear-etikedoj", help=tr_multi("Clear all tags", "Clear all tags", "Effacer toutes les etiquettes")),
     clear_ligiloj: bool = typer.Option(False, "--clear-ligiloj", help=tr_multi("Clear all links", "Clear all links", "Effacer tous les liens")),
     clear_tipo: bool = typer.Option(False, "--clear-tipo", help=tr_multi("Clear type list", "Clear type list", "Effacer la liste des types")),
+    ligilo_add: Optional[List[str]] = typer.Option(None, "--ligilo-add", help=tr_multi("Add link(s) to UUID(s)", "Add link(s) to UUID(s)", "Ajouter un/des lien(s) a UUID(s)")),
+    ligilo_remove: Optional[List[str]] = typer.Option(None, "--ligilo-remove", help=tr_multi("Remove link(s) by UUID", "Remove link(s) by UUID", "Retirer un/des lien(s) par UUID")),
 ) -> None:
     """Modify a word entry."""
     from A_vorto.utils import normalize_tipo, normalize_tono, parse_etikedoj, split_difino_uzo
@@ -310,9 +351,16 @@ def modifi(
     elif etikedoj is not None:
         data["etikedoj"] = parse_etikedoj(etikedoj)
 
-    # ligiloj (clear only — full management deferred to A-core #18/#19)
+    # ligiloj: clear, add, or remove
     if clear_ligiloj:
         data["ligiloj"] = []
+    elif ligilo_add is not None or ligilo_remove is not None:
+        existing_ligiloj = set(existing.get("ligiloj") or [])
+        if ligilo_add:
+            existing_ligiloj.update(ligilo_add)
+        if ligilo_remove:
+            existing_ligiloj.difference_update(ligilo_remove)
+        data["ligiloj"] = list(existing_ligiloj)
 
     if not data:
         error(tr_multi("Neniuj sxangoj", "No changes", "Aucun changement"))
