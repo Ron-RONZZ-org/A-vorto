@@ -67,6 +67,62 @@ class TestCLI:
         # Should run without error
         assert result.exit_code == 0
 
+    def test_serchi_with_lingvo_filter(self):
+        """Test serchi command with lingvo filter."""
+        from A_vorto.cli import app
+        
+        runner = CliRunner()
+        result = runner.invoke(app, ["serchi", "test", "--lingvo", "eo"])
+        assert result.exit_code == 0
+
+    def test_serchi_with_kategorio_filter(self):
+        """Test serchi command with kategorio filter."""
+        from A_vorto.cli import app
+        
+        runner = CliRunner()
+        result = runner.invoke(app, ["serchi", "test", "--kategorio", "vorto"])
+        assert result.exit_code == 0
+
+    def test_serchi_with_tipo_filter(self):
+        """Test serchi command with tipo filter."""
+        from A_vorto.cli import app
+        
+        runner = CliRunner()
+        result = runner.invoke(app, ["serchi", "test", "--tipo", "su"])
+        assert result.exit_code == 0
+
+    def test_serchi_with_temo_filter(self):
+        """Test serchi command with temo filter."""
+        from A_vorto.cli import app
+        
+        runner = CliRunner()
+        result = runner.invoke(app, ["serchi", "test", "--temo", "gramatiko"])
+        assert result.exit_code == 0
+
+    def test_serchi_with_tono_filter(self):
+        """Test serchi command with tono filter."""
+        from A_vorto.cli import app
+        
+        runner = CliRunner()
+        result = runner.invoke(app, ["serchi", "test", "--tono", "nf"])
+        assert result.exit_code == 0
+
+    def test_serchi_with_combined_filters(self):
+        """Test serchi command with multiple filters."""
+        from A_vorto.cli import app
+        
+        runner = CliRunner()
+        result = runner.invoke(app, ["serchi", "test", "--lingvo", "eo", "--kategorio", "vorto"])
+        assert result.exit_code == 0
+
+    def test_serchi_with_filter_and_fuzzy(self):
+        """Test serchi command with filter and fuzzy enabled."""
+        from A_vorto.cli import app
+        
+        runner = CliRunner()
+        result = runner.invoke(app, ["serchi", "test", "--lingvo", "eo", "--fuzzy"])
+        assert result.exit_code == 0
+
     def test_modifi_nonexistent(self):
         """Test modifi command with non-existent UUID."""
         from A_vorto.cli import app

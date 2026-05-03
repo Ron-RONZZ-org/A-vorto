@@ -532,6 +532,7 @@ def eksporti(
 
 
 @app.command("serchi")
+@app.command("serci", deprecated=True)
 def serchi(
     query: str,
     fuzzy: bool = typer.Option(
@@ -546,10 +547,54 @@ def serchi(
         "-l",
         help=tr_multi("Limit results", "Limit results", "Limiter les resultats"),
     ),
+    lingvo: Optional[str] = typer.Option(
+        None,
+        "--lingvo",
+        "-L",
+        help=tr_multi("Filter by language", "Filter by language", "Filtrer par langue"),
+    ),
+    kategorio: Optional[str] = typer.Option(
+        None,
+        "--kategorio",
+        "-k",
+        help=tr_multi("Filter by category (vorto/frazo/frazdaro)", "Filter by category (vorto/frazo/frazdaro)", "Filtrer par categorie"),
+    ),
+    tipo: Optional[str] = typer.Option(
+        None,
+        "--tipo",
+        "-t",
+        help=tr_multi("Filter by type (su, aj, etc.)", "Filter by type (su, aj, etc.)", "Filtrer par type"),
+    ),
+    temo: Optional[str] = typer.Option(
+        None,
+        "--temo",
+        "-m",
+        help=tr_multi("Filter by theme", "Filter by theme", "Filtrer par theme"),
+    ),
+    tono: Optional[str] = typer.Option(
+        None,
+        "--tono",
+        "-T",
+        help=tr_multi("Filter by tonality (nf, fo, am)", "Filter by tonality (nf, fo, am)", "Filtrer par tonalite"),
+    ),
 ) -> None:
     """Search word entries using FTS5 full-text search."""
     service = get_service()
-    entries = service.search_advanced(query, fuzzy=fuzzy, limit=limit)
+    
+    # Build filters dict from non-None values
+    filters = {}
+    if lingvo:
+        filters["lingvo"] = lingvo
+    if kategorio:
+        filters["kategorio"] = kategorio
+    if tipo:
+        filters["tipo"] = tipo
+    if temo:
+        filters["temo"] = temo
+    if tono:
+        filters["tono"] = tono
+    
+    entries = service.search_advanced(query, filters=filters, fuzzy=fuzzy, limit=limit)
     
     if not entries:
         info(tr_multi("Neniuj rezultoj", "No results", "Aucun resultat"))
