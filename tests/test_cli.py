@@ -58,6 +58,31 @@ class TestCLI:
         # Should fail with not found error
         assert result.exit_code == 1
 
+    def test_vidi_with_show_all(self):
+        """Test vidi command with --show-all flag."""
+        from A_vorto.cli import app
+        
+        runner = CliRunner()
+        result = runner.invoke(app, ["vidi", str(uuid.uuid4()), "--show-all"])
+        # Should run without error (will show not found or empty fields)
+        assert result.exit_code in [0, 1]
+
+    def test_vidi_with_show_all_alias_a(self):
+        """Test vidi command with -a alias for --show-all."""
+        from A_vorto.cli import app
+        
+        runner = CliRunner()
+        result = runner.invoke(app, ["vidi", str(uuid.uuid4()), "-a"])
+        assert result.exit_code in [0, 1]
+
+    def test_vidi_with_show_all_alias_cxio(self):
+        """Test vidi command with --cxio alias for --show-all."""
+        from A_vorto.cli import app
+        
+        runner = CliRunner()
+        result = runner.invoke(app, ["vidi", str(uuid.uuid4()), "--cxio"])
+        assert result.exit_code in [0, 1]
+
     def test_serchi(self):
         """Test serchi command."""
         from A_vorto.cli import app
