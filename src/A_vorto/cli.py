@@ -78,6 +78,13 @@ def vidi(
         "-r",
         help=tr_multi("Show linked entries and references", "Show linked entries and references", "Montrer les entrees liees et les references"),
     ),
+    show_all: bool = typer.Option(
+        False,
+        "--show-all",
+        "-a",
+        "--cxio",
+        help=tr_multi("Show all fields (including empty)", "Show all fields (including empty)", "Afficher tous les champs (y compris vides)"),
+    ),
 ) -> None:
     """View a word entry by UUID."""
     service = get_service()
@@ -87,57 +94,95 @@ def vidi(
         error(tr_multi(f"Vorto {uuid} ne trovitas", f"Word {uuid} not found", f"Mot {uuid} non trouve"))
         raise typer.Exit(1)
 
-    # Display full entry
+    # Display entry
     console.print(f"[bold cyan]UUID:[/] {entry.get('uuid')}")
     console.print(f"[bold cyan]Teksto:[/] {entry.get('teksto')}")
 
-    if entry.get("lingvo"):
-        console.print(f"[bold cyan]Lingvo:[/] {entry.get('lingvo')}")
-    if entry.get("kategorio"):
-        console.print(f"[bold cyan]Kategorio:[/] {entry.get('kategorio')}")
+    # Show all fields or only non-empty
+    def show_field(label: str, value) -> bool:
+        """Check if field should be displayed."""
+        if show_all:
+            return True  # Show all in show-all mode
+        # Otherwise show if value exists
+        if value is None:
+            return False
+        if isinstance(value, (str, list, dict)):
+            return bool(value)
+        return True
+
+    if show_field("Lingvo", entry.get("lingvo")):
+        val = entry.get("lingvo") or tr_multi("(malplena)", "(empty)", "(vide)")
+        console.print(f"[bold cyan]Lingvo:[/] {val}")
+    if show_field("Kategorio", entry.get("kategorio")):
+        val = entry.get("kategorio") or tr_multi("(malplena)", "(empty)", "(vide)")
+        console.print(f"[bold cyan]Kategorio:[/] {val}")
 
     tipo = entry.get("tipo")
-    if tipo:
-        if isinstance(tipo, list):
-            console.print(f"[bold cyan]Tipo:[/] {', '.join(str(t) for t in tipo)}")
+    if show_field("Tipo", tipo):
+        if tipo:
+            if isinstance(tipo, list):
+                display_tipo = ", ".join(str(t) for t in tipo)
+            else:
+            display_tipo = str(tipo)
         else:
-            console.print(f"[bold cyan]Tipo:[/] {tipo}")
+            display_tipo = tr_multi("(malplena)", "(empty)", "(vide)")
+        console.print(f"[bold cyan]Tipo:[/] {display_tipo}")
 
-    if entry.get("temo"):
-        console.print(f"[bold cyan]Temo:[/] {entry.get('temo')}")
-    if entry.get("tono"):
-        console.print(f"[bold cyan]Tono:[/] {entry.get('tono')}")
-    if entry.get("nivelo") is not None:
-        console.print(f"[bold cyan]Nivelo:[/] {entry.get('nivelo')}")
-    if entry.get("autoro"):
-        console.print(f"[bold cyan]Autoro:[/] {entry.get('autoro')}")
-    if entry.get("verko"):
-        console.print(f"[bold cyan]Verko:[/] {entry.get('verko')}")
+    if show_field("Temo", entry.get("temo")):
+        val = entry.get("temo") or tr_multi("(malplena)", "(empty)", "(vide)")
+        console.print(f"[bold cyan]Temo:[/] {val}")
+    if show_field("Tono", entry.get("tono")):
+        val = entry.get("tono") or tr_multi("(malplena)", "(empty)", "(vide)")
+        console.print(f"[bold cyan]Tono:[/] {val}")
+    if show_field("Nivelo", entry.get("nivelo")):
+        val = entry.get("nivelo") if entry.get("nivelo") is not None else tr_multi("(malplena)", "(empty)", "(vide)")
+        console.print(f"[bold cyan]Nivelo:[/] {val}")
+    if show_field("Autoro", entry.get("autoro")):
+        val = entry.get("autoro") or tr_multi("(malplena)", "(empty)", "(vide)")
+        console.print(f"[bold cyan]Autoro:[/] {val}")
+    if show_field("Verko", entry.get("verko")):
+        val = entry.get("verko") or tr_multi("(malplena)", "(empty)", "(vide)")
+        console.print(f"[bold cyan]Verko:[/] {val}")
 
     # Show definitions with usage examples
     difinoj = entry.get("difinoj") or []
     uzoj = entry.get("uzoj") or []
-    if difinoj:
-        console.print("[bold cyan]Difinoj:[/]")
-        for i, d in enumerate(difinoj):
-            label = f"  {i + 1}. {d}"
-            if i < len(uzoj) and uzoj[i]:
-                label += f"  [dim]-- {uzoj[i]}[/]"
-            console.print(label)
+    if show_field("Difinoj", difinoj):
+        if difinoj:
+            console.print("[bold cyan]Difinoj:[/]")
+            for i, d in enumerate(difinoj):
+                label = f"  {i + 1}. {d}"
+                if i < len(uzoj) and uzoj[i]:
+                    label += f"  [dim]-- {uzoj[i]}[/]"
+                console.print(label)
+        else:
+            console.print(f"[bold cyan]Difinoj:[/]  {tr_multi('(malplena)', '(empty)', '(vide)')}")
 
     # Show tags
     etikedoj = entry.get("etikedoj") or {}
-    if etikedoj and isinstance(etikedoj, dict):
-        console.print(f"[bold cyan]Etikedoj:[/]")
-        for k, v in etikedoj.items():
-            console.print(f"  {k}: {v}")
+    if show_field("Etikedoj", etikedoj):
+        if etikedoj and isinstance(etikedoj, dict):
+            console.print(f"[bold cyan]Etikedoj:[/]")
+            for k, v in etikedoj.items():
+                console.print(f"  {k}: {v}")
+        else:
+            console.print(f"[bold cyan]Etikedoj:[/]  {tr_multi('(malplena)', '(empty)', '(vide)')}")
 
-    # Show links (stored as list of UUIDs)
+    # Show links (as resolved references when show_all, as UUIDs otherwise)
     ligiloj = entry.get("ligiloj") or []
-    if ligiloj:
-        console.print(f"[bold cyan]Ligiloj:[/]")
-        for ref in ligiloj:
-            console.print(f"  {ref}")
+    if show_field("Ligiloj", ligiloj):
+        if ligiloj:
+            console.print(f"[bold cyan]Ligiloj:[/]")
+            for ref in ligiloj:
+                # Try to resolve the linked entry
+                target = service.get(ref)
+                if target:
+                    title = target.get("teksto", "")
+                    console.print(f"  → {title} ({ref[:8]})")
+                else:
+                    console.print(f"  {ref[:8]} (ne trovita)")
+        else:
+            console.print(f"[bold cyan]Ligiloj:[/]  {tr_multi('(malplena)', '(empty)', '(vide)')}")
 
     # Show linked entries and references if --ref flag is set
     if ref:
@@ -172,8 +217,13 @@ def vidi(
         from A.core.markdown_html_view import preview_markdown
         preview_markdown(entry["teksto"], title=entry["teksto"])
 
-    console.print(f"[bold cyan]Kreita:[/] {entry.get('kreita_je')}")
-    console.print(f"[bold cyan]Modifita:[/] {entry.get('modifita_je')}")
+    # Show timestamps
+    if show_all:
+        console.print(f"[bold cyan]Kreita:[/] {entry.get('kreita_je') or tr_multi('(nekonata)', '(unknown)', '(inconnu)')}")
+        console.print(f"[bold cyan]Modifita:[/] {entry.get('modifita_je') or tr_multi('(nekonata)', '(unknown)', '(inconnu)')}")
+    else:
+        console.print(f"[bold cyan]Kreita:[/] {entry.get('kreita_je')}")
+        console.print(f"[bold cyan]Modifita:[/] {entry.get('modifita_je')}")
 
 
 @app.command("aldoni")
