@@ -152,8 +152,31 @@ PYTHONPATH=../A-core/src:src .venv/bin/python -m pytest tests/
 ## Documentation
 
 - **Readthedocs**: https://a-vorto.readthedocs.io
-- **Man pages**: `docs/man/vorto.1.md` (build with `docs/man/build.sh`)
 - **Source**: `docs/` folder with commands/, features/, api.md
+
+## Migration from autish
+
+A-vorto supports migration from autish vorto.db:
+
+| Legacy | Target | Description |
+|--------|--------|-------------|
+| vorto.db → vorto | A-vorto → vorto | Wordbook (487 entries) |
+
+**CLI:**
+```bash
+A migri           # Run migrations
+```
+
+**Programmatic:**
+```python
+from A_vorto.data.migrate_from_autish import migrate
+result = migrate()
+```
+
+Features:
+- JSON field conversions (difinoj, uzoj, etikedoj, ligiloj)
+- Preserves UUIDs and timestamps
+- Idempotent
 
 ## Branch Convention
 

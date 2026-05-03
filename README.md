@@ -91,6 +91,18 @@ A-vorto is a plugin for the [A](https://github.com/Ron-RONZZ-org/A-core/) framew
 
 See the [A-core documentation](https://github.com/Ron-RONZZ-org/A-core/) for more on the framework.
 
+## Migration from autish
+
+A-vorto supports migration from autish:
+
+```bash
+A migri           # Run migrations (imports words)
+```
+
+| Legacy | Target | Description |
+|--------|--------|-------------|
+| vorto.db → vorto | A-vorto → vorto | Wordbook |
+
 ## History
 
 A-vorto is based on [autish vorto](https://github.com/Ron-RONZZ-org/autish/) and is the reference implementation for A plugins.
