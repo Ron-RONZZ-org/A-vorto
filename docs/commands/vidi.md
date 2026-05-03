@@ -20,6 +20,7 @@ A vorto vidi <UUID> [OPTIONS]
 |--------|-------|-------------|
 | `--html` | `-h` | Open markdown as HTML preview in browser |
 | `--ref` | `-r` | Show linked entries and cross-references |
+| `--show-all` | `-a`, `--cxio` | Show all fields including empty ones |
 
 ## Examples
 
@@ -35,6 +36,12 @@ A vorto vidi 952f2079 --ref
 
 # View with HTML and references
 A vorto vidi 952f2079 --html --ref
+
+# View all fields (including empty)
+A vorto vidi 952f2079 --show-all
+
+# Short form
+A vorto vidi 952f2079 -a
 ```
 
 ## Output Fields
