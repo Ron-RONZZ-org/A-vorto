@@ -148,6 +148,13 @@ PYTHONPATH=../A-core/src:src .venv/bin/python -m pytest tests/
 | `test_utils.py` | 56 | Type maps, parsers, normalizers |
 
 **Total: 79 tests** (3 pre-existing FTS5 failures in test env)
+
+## Documentation
+
+- **Readthedocs**: https://a-vorto.readthedocs.io
+- **Man pages**: `docs/man/vorto.1.md` (build with `docs/man/build.sh`)
+- **Source**: `docs/` folder with commands/, features/, api.md
+
 ## Branch Convention
 
 All A-* repos use `main` as the primary branch. Use `main` for all development.
