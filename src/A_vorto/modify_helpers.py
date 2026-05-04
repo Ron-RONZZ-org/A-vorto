@@ -11,6 +11,28 @@ from A.utils.output import console
 from A_vorto.service import get_service
 
 
+def _find_duplicate(teksto: str) -> dict[str, Any] | None:
+    """Check if an entry with the same teksto already exists.
+
+    Performs case-insensitive exact match (not prefix).
+    Returns the existing entry dict if found, None otherwise.
+
+    Args:
+        teksto: The word text to check.
+
+    Returns:
+        Existing entry dict or None.
+    """
+    service = get_service()
+    from A_vorto.data.storage import get_db
+    db = get_db()
+    row = db.execute_one(
+        "SELECT * FROM vorto WHERE LOWER(teksto) = ? AND forigita_je IS NULL",
+        (teksto.lower(),),
+    )
+    return dict(row) if row else None
+
+
 def _build_create_data(
     teksto: str,
     lingvo: str | None = None,
