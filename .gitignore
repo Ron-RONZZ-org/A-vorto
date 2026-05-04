@@ -11,7 +11,8 @@ build/
 venv/
 
 # IDE / tools
-.serena/
+.serena/cache/
+.serena/project*.yml
 .vscode/
 .idea/
 *.swp
