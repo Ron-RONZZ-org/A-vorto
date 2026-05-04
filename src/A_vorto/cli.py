@@ -1,18 +1,19 @@
 """CLI for vorto command."""
 
-import json
 from pathlib import Path
 from typing import List, Optional
 
 import typer
 
 from A import error, info, tr_multi
-from A.core.import_ import import_json
-from A.core.export import export_json, export_toml
-from A.utils import copy_to_clipboard
 from A.utils.output import console, print_table
 
 from A_vorto.service import get_service
+from A_vorto.display_helpers import _show_entry
+from A_vorto.search_helpers import _run_search, _display_search_results
+from A_vorto.modify_helpers import _build_create_data, _build_update_data, _handle_create_result
+from A_vorto.manage_helpers import _handle_forigi, _handle_malfari, _handle_rubujo, _handle_restaurigi, _handle_senrubujigi
+from A_vorto.import_export_helpers import _handle_import, _handle_export
 
 
 def _display_results(entries: list[dict]) -> None:
@@ -163,160 +164,8 @@ def vidi(
             error(tr_multi(f"Vorto {uid} ne trovitas", f"Word {uid} not found", f"Mot {uid} non trouve"))
             raise typer.Exit(1)
     
-    # Handle clipboard copy
-    if kopii or semantika_kopii:
-        if kopii:
-            copy_to_clipboard(f"#{entry['uuid'][:8]}")
-        if semantika_kopii:
-            copy_to_clipboard(f"[{entry['teksto']}](#{entry['uuid'][:8]})")
-
-    # Display entry
-    console.print(f"[bold cyan]UUID:[/] {entry.get('uuid')}")
-    console.print(f"[bold cyan]Teksto:[/] {entry.get('teksto')}")
-
-    # Show all fields or only non-empty
-    def show_field(label: str, value) -> bool:
-        """Check if field should be displayed."""
-        if cxio:
-            return True  # Show all in show-all mode
-        # Otherwise show if value exists
-        if value is None:
-            return False
-        # Use type name to avoid potential shadowing of builtins
-        if type(value).__name__ in ('str', 'list', 'dict'):
-            return bool(value)
-        return True
-
-    if show_field("Lingvo", entry.get("lingvo")):
-        val = entry.get("lingvo") or tr_multi("(malplena)", "(empty)", "(vide)")
-        console.print(f"[bold cyan]Lingvo:[/] {val}")
-    if show_field("Kategorio", entry.get("kategorio")):
-        val = entry.get("kategorio") or tr_multi("(malplena)", "(empty)", "(vide)")
-        console.print(f"[bold cyan]Kategorio:[/] {val}")
-
-    tipo = entry.get("tipo")
-    if show_field("Tipo", tipo):
-        if tipo:
-            if isinstance(tipo, str):
-                display_tipo = tipo
-            else:
-                display_tipo = ", ".join(str(t) for t in tipo)
-        else:
-            display_tipo = tr_multi("(malplena)", "(empty)", "(vide)")
-        console.print(f"[bold cyan]Tipo:[/] {display_tipo}")
-
-    if show_field("Temo", entry.get("temo")):
-        val = entry.get("temo") or tr_multi("(malplena)", "(empty)", "(vide)")
-        console.print(f"[bold cyan]Temo:[/] {val}")
-    if show_field("Tono", entry.get("tono")):
-        val = entry.get("tono") or tr_multi("(malplena)", "(empty)", "(vide)")
-        console.print(f"[bold cyan]Tono:[/] {val}")
-    if show_field("Nivelo", entry.get("nivelo")):
-        val = entry.get("nivelo") if entry.get("nivelo") is not None else tr_multi("(malplena)", "(empty)", "(vide)")
-        console.print(f"[bold cyan]Nivelo:[/] {val}")
-    if show_field("Autoro", entry.get("autoro")):
-        val = entry.get("autoro") or tr_multi("(malplena)", "(empty)", "(vide)")
-        console.print(f"[bold cyan]Autoro:[/] {val}")
-    if show_field("Verko", entry.get("verko")):
-        val = entry.get("verko") or tr_multi("(malplena)", "(empty)", "(vide)")
-        console.print(f"[bold cyan]Verko:[/] {val}")
-
-    # Show definitions with usage examples
-    difinoj_raw = entry.get("difinoj") or "[]"
-    uzoj_raw = entry.get("uzoj") or "[]"
-    if isinstance(difinoj_raw, str):
-        difinoj = json.loads(difinoj_raw) if difinoj_raw.strip() else []
-    else:
-        difinoj = difinoj_raw or []
-    if isinstance(uzoj_raw, str):
-        uzoj = json.loads(uzoj_raw) if uzoj_raw.strip() else []
-    else:
-        uzoj = uzoj_raw or []
-    if show_field("Difinoj", difinoj):
-        if difinoj:
-            console.print("[bold cyan]Difinoj:[/]")
-            for i, d in enumerate(difinoj):
-                label = f"  {i + 1}. {d}"
-                if i < len(uzoj) and uzoj[i]:
-                    label += f"  [dim]-- {uzoj[i]}[/]"
-                console.print(label)
-        else:
-            console.print(f"[bold cyan]Difinoj:[/]  {tr_multi('(malplena)', '(empty)', '(vide)')}")
-
-    # Show tags
-    etikedoj_raw = entry.get("etikedoj") or "{}"
-    if isinstance(etikedoj_raw, str):
-        etikedoj = json.loads(etikedoj_raw) if etikedoj_raw.strip() else {}
-    else:
-        etikedoj = etikedoj_raw or {}
-    if show_field("Etikedoj", etikedoj):
-        if etikedoj and isinstance(etikedoj, dict):
-            console.print(f"[bold cyan]Etikedoj:[/]")
-            for k, v in etikedoj.items():
-                console.print(f"  {k}: {v}")
-        else:
-            console.print(f"[bold cyan]Etikedoj:[/]  {tr_multi('(malplena)', '(empty)', '(vide)')}")
-
-    # Show links (as resolved references when show_all, as UUIDs otherwise)
-    ligiloj_raw = entry.get("ligiloj") or "[]"
-    if isinstance(ligiloj_raw, str):
-        ligiloj = json.loads(ligiloj_raw) if ligiloj_raw.strip() else []
-    else:
-        ligiloj = ligiloj_raw or []
-    if show_field("Ligiloj", ligiloj):
-        if ligiloj:
-            console.print(f"[bold cyan]Ligiloj:[/]")
-            for ref in ligiloj:
-                # Try to resolve the linked entry
-                target = service.get(ref)
-                if target:
-                    title = target.get("teksto", "")
-                    console.print(f"  → {title} ({ref[:8]})")
-                else:
-                    console.print(f"  {ref[:8]} (ne trovita)")
-        else:
-            console.print(f"[bold cyan]Ligiloj:[/]  {tr_multi('(malplena)', '(empty)', '(vide)')}")
-
-    # Show linked entries and references if --ref flag is set
-    if ref:
-        # Get links from A.core.links
-        links = service.get_linked_entries(uid)
-        
-        if links["outgoing"]:
-            console.print("[bold cyan]Ligiloj (elirantaj):[/]")
-            for link in links["outgoing"]:
-                target = service.get(link.target_id)
-                title = target.get("teksto", "") if target else link.target_id[:8]
-                console.print(f"  → {title} ({link.target_id[:8]})")
-        
-        if links["incoming"]:
-            console.print("[bold cyan]Ligiloj (envenantaj):[/]")
-            for link in links["incoming"]:
-                source = service.get(link.source_id)
-                title = source.get("teksto", "") if source else link.source_id[:8]
-                console.print(f"  ← {title} ({link.source_id[:8]})")
-        
-        # Parse cross-references from text fields
-        refs = service.get_references(entry)
-        if refs:
-            console.print("[bold cyan]Referencoj:[/]")
-            for r in refs:
-                display = r.title or f"{r.ref_type}#{r.uuid[:8]}"
-                exists_mark = "[green]✓[/]" if r.exists else "[red]?[/]"
-                console.print(f"  {exists_mark} {display}")
-
-    # Open browser preview if requested
-    if html and entry.get("teksto"):
-        from A.core.markdown_html_view import preview_markdown
-        preview_markdown(entry["teksto"], title=entry["teksto"])
-
-    # Show timestamps
-    if cxio:
-        console.print(f"[bold cyan]Kreita:[/] {entry.get('kreita_je') or tr_multi('(nekonata)', '(unknown)', '(inconnu)')}")
-        console.print(f"[bold cyan]Modifita:[/] {entry.get('modifita_je') or tr_multi('(nekonata)', '(unknown)', '(inconnu)')}")
-    else:
-        console.print(f"[bold cyan]Kreita:[/] {entry.get('kreita_je')}")
-        console.print(f"[bold cyan]Modifita:[/] {entry.get('modifita_je')}")
+    # Display entry using Rich Panel
+    _show_entry(service, entry, cxio=cxio, ref=ref, html=html, kopii=kopii, semantika_kopii=semantika_kopii)
 
 
 @app.command("aldoni")
@@ -348,76 +197,26 @@ def aldoni(
     ),
 ) -> None:
     """Add a new word entry."""
-    from A_vorto.utils import (
-        detect_kategorio,
-        normalize_tipo,
-        normalize_tono,
-        parse_etikedoj,
-        split_difino_uzo,
-    )
-
     service = get_service()
 
-    # Auto-detect kategorio if not provided
-    effective_kategorio = kategorio or detect_kategorio(teksto)
-    effective_tipo = normalize_tipo(tipo)
-    effective_tono = normalize_tono(tono)
+    data = _build_create_data(
+        teksto=teksto,
+        lingvo=lingvo,
+        kategorio=kategorio,
+        tipo=tipo,
+        temo=temo,
+        tono=tono,
+        nivelo=nivelo,
+        difinoj=difinoj,
+        uzoj=uzoj,
+        etikedoj=etikedoj,
+        ligiloj=ligiloj,
+        autoro=autoro,
+        verko=verko,
+    )
 
-    data: dict[str, object] = {
-        "teksto": teksto,
-        "kategorio": effective_kategorio,
-    }
-    if lingvo:
-        data["lingvo"] = lingvo
-    if effective_tipo is not None:
-        data["tipo"] = ",".join(effective_tipo)
-    if temo:
-        data["temo"] = temo
-    if effective_tono is not None:
-        data["tono"] = effective_tono
-    if autoro:
-        data["autoro"] = autoro
-    if verko:
-        data["verko"] = verko
-    if nivelo is not None:
-        data["nivelo"] = nivelo
-
-    # Process difinoj with optional paired uzoj
-    parsed_difinoj: list[str] = []
-    parsed_uzoj: list[str] = []
-    if difinoj:
-        for raw in difinoj:
-            d, u = split_difino_uzo(raw)
-            parsed_difinoj.append(d)
-            parsed_uzoj.append(u)
-        data["difinoj"] = parsed_difinoj
-        data["uzoj"] = parsed_uzoj
-
-    # Standalone usage examples (appended after paired uzoj)
-    if uzoj:
-        existing = data.get("uzoj", [])
-        if isinstance(existing, list):
-            data["uzoj"] = existing + list(uzoj)
-
-    # Parse etikedoj
-    if etikedoj:
-        data["etikedoj"] = parse_etikedoj(etikedoj)
-
-    # Add ligiloj (links to other entries)
-    if ligiloj:
-        data["ligiloj"] = list(ligiloj)
-
-    # VortoService handles JSON serialization - don't serialize here
     entry = service.create(data)
-    info(tr_multi(f"Aldonis {teksto}", f"Added {teksto}", f"Ajoute {teksto}"))
-    console.print(f"[green]UUID:[/] {entry.get('uuid')}")
-    
-    # Handle clipboard copy options
-    if kopii or semantika_kopii:
-        if kopii:
-            copy_to_clipboard(f"#{entry['uuid'][:8]}")
-        if semantika_kopii:
-            copy_to_clipboard(f"[{entry['teksto']}](#{entry['uuid'][:8]})")
+    _handle_create_result(entry, teksto, kopii, semantika_kopii)
 
 
 @app.command("modifi")
@@ -444,86 +243,35 @@ def modifi(
     ligilo_remove: Optional[List[str]] = typer.Option(None, "--ligilo-remove", help=tr_multi("Remove link(s) by UUID", "Remove link(s) by UUID", "Retirer un/des lien(s) par UUID")),
 ) -> None:
     """Modify a word entry."""
-    from A_vorto.utils import normalize_tipo, normalize_tono, parse_etikedoj, split_difino_uzo
-
     service = get_service()
 
-    # Check exists
     existing = service.get(uuid)
     if not existing:
         error(tr_multi(f"Vorto {uuid} ne trovitas", f"Word {uuid} not found", f"Mot {uuid} non trouve"))
         raise typer.Exit(1)
 
-    # Build update data
-    data: dict[str, object] = {}
-    if teksto is not None:
-        data["teksto"] = teksto
-    if lingvo is not None:
-        data["lingvo"] = lingvo
-    if kategorio is not None:
-        data["kategorio"] = kategorio
-    if temo is not None:
-        data["temo"] = temo
-    if autoro is not None:
-        data["autoro"] = autoro
-    if verko is not None:
-        data["verko"] = verko
-    if nivelo is not None:
-        data["nivelo"] = nivelo
-
-    # tipo: normalize if provided, clear if flag set
-    if tipo is not None:
-        effective = normalize_tipo(tipo)
-        if effective is not None:
-            data["tipo"] = ",".join(effective)
-    if clear_tipo:
-        data["tipo"] = None
-
-    # tono: normalize if provided
-    if tono is not None:
-        effective = normalize_tono(tono)
-        if effective is not None:
-            data["tono"] = effective
-
-    # difinoj/uzoj
-    if clear_difinoj:
-        data["difinoj"] = []
-        data["uzoj"] = []
-    elif difinoj is not None:
-        parsed_difinoj: list[str] = []
-        parsed_uzoj: list[str] = []
-        for raw in difinoj:
-            d, u = split_difino_uzo(raw)
-            parsed_difinoj.append(d)
-            parsed_uzoj.append(u)
-        data["difinoj"] = parsed_difinoj
-        data["uzoj"] = parsed_uzoj
-
-    if clear_uzoj:
-        data["uzoj"] = []
-    elif uzoj is not None:
-        existing_uzoj = existing.get("uzoj") or []
-        if isinstance(existing_uzoj, list):
-            data["uzoj"] = existing_uzoj + list(uzoj)
-        else:
-            data["uzoj"] = list(uzoj)
-
-    # etikedoj
-    if clear_etikedoj:
-        data["etikedoj"] = {}
-    elif etikedoj is not None:
-        data["etikedoj"] = parse_etikedoj(etikedoj)
-
-    # ligiloj: clear, add, or remove
-    if clear_ligiloj:
-        data["ligiloj"] = []
-    elif ligilo_add is not None or ligilo_remove is not None:
-        existing_ligiloj = set(existing.get("ligiloj") or [])
-        if ligilo_add:
-            existing_ligiloj.update(ligilo_add)
-        if ligilo_remove:
-            existing_ligiloj.difference_update(ligilo_remove)
-        data["ligiloj"] = list(existing_ligiloj)
+    data = _build_update_data(
+        existing=existing,
+        teksto=teksto,
+        lingvo=lingvo,
+        kategorio=kategorio,
+        tipo=tipo,
+        temo=temo,
+        tono=tono,
+        nivelo=nivelo,
+        difinoj=difinoj,
+        uzoj=uzoj,
+        etikedoj=etikedoj,
+        autoro=autoro,
+        verko=verko,
+        clear_difinoj=clear_difinoj,
+        clear_uzoj=clear_uzoj,
+        clear_etikedoj=clear_etikedoj,
+        clear_ligiloj=clear_ligiloj,
+        clear_tipo=clear_tipo,
+        ligilo_add=ligilo_add,
+        ligilo_remove=ligilo_remove,
+    )
 
     if not data:
         error(tr_multi("Neniuj sxangoj", "No changes", "Aucun changement"))
@@ -544,34 +292,13 @@ def forigi(
     ),
 ) -> None:
     """Delete a word entry."""
-    service = get_service()
-    
-    existing = service.get(uuid)
-    if not existing:
-        error(tr_multi(f"Vorto {uuid} ne trovitas", f"Word {uuid} not found", f"Mot {uuid} non trouve"))
-        raise typer.Exit(1)
-    
-    soft = not hard
-    service.delete(uuid, soft=soft)
-    
-    if soft:
-        info(tr_multi(f"Forigas {uuid} (sxoveblas)", f"Deleted {uuid} (soft)", f"Supprime {uuid} ( mou)"))
-    else:
-        info(tr_multi(f"Forigas {uuid} (permanenta)", f"Deleted {uuid} (permanent)", f"Supprime {uuid} (permanent)"))
+    _handle_forigi(uuid, hard=hard)
 
 
 @app.command("malfari")
 def malfari() -> None:
     """Undo the last operation."""
-    service = get_service()
-    result = service.undo()
-    
-    if not result:
-        info(tr_multi("Nenio por malfari", "Nothing to undo", "Rien a defaire"))
-        return
-    
-    op_type = result.get("operation", "unknown")
-    info(tr_multi(f"Malfaris {op_type}", f"Undid {op_type}", f"Defait {op_type}"))
+    _handle_malfari()
 
 
 @app.command("rubujo")
@@ -584,20 +311,7 @@ def rubujo(
     ),
 ) -> None:
     """List entries in trash."""
-    service = get_service()
-    entries = service.get_trash(limit=limit)
-    
-    if not entries:
-        info(tr_multi("Rubujo estas cxirkau", "Trash is empty", "Corbeille vide"))
-        return
-    
-    for entry in entries:
-        uuid = entry.get("uuid", "")[:8]
-        teksto = entry.get("teksto", "")
-        forigita = entry.get("forigita_je", "")
-        console.print(f"[cyan]{uuid}[/] [bold]{teksto}[/] [dim]{forigita}[/]")
-    
-    info(tr_multi(f"{len(entries)} en rubujo", f"{len(entries)} in trash", f"{len(entries)} dans la corbeille"))
+    _handle_rubujo(limit=limit)
 
 
 @app.command("restaurigi")
@@ -605,14 +319,7 @@ def restaurigi(
     uuid: str,
 ) -> None:
     """Restore an entry from trash."""
-    service = get_service()
-    
-    entry = service.restore(uuid)
-    if not entry:
-        error(tr_multi(f"Vorto {uuid} ne trovitas en rubujo", f"Word {uuid} not found in trash", f"Mot {uuid} non trouve dans la corbeille"))
-        raise typer.Exit(1)
-    
-    info(tr_multi(f"Restaurigis {uuid}", f"Restored {uuid}", f"Restored {uuid}"))
+    _handle_restaurigi(uuid)
 
 
 @app.command("senrubujigi")
@@ -625,10 +332,7 @@ def senrubujigi(
     ),
 ) -> None:
     """Permanently delete entries from trash older than specified days."""
-    service = get_service()
-    
-    count = service.empty_trash(days=days)
-    info(tr_multi(f"Forigis {count} el rubujo", f"Deleted {count} from trash", f"Supprime {count} de la corbeille"))
+    _handle_senrubujigi(days=days)
 
 
 @app.command("importi")
@@ -642,23 +346,7 @@ def importi(
     ),
 ) -> None:
     """Import word entries from JSON file."""
-    service = get_service()
-    
-    try:
-        records = import_json(path, decryption_password=password)
-    except Exception as e:
-        error(tr_multi(f"Importo fiaskis: {e}", f"Import failed: {e}", f"Echec de l'importation: {e}"))
-        raise typer.Exit(1)
-    
-    count = 0
-    for record in records:
-        try:
-            service.create(record)
-            count += 1
-        except Exception:
-            pass  # Skip duplicates/errors
-    
-    info(tr_multi(f"Importis {count} vortojn", f"Imported {count} words", f"Importe {count} mots"))
+    _handle_import(path, password=password)
 
 
 @app.command("eksporti")
@@ -678,20 +366,7 @@ def eksporti(
     ),
 ) -> None:
     """Export word entries to JSON or TOML file."""
-    service = get_service()
-    
-    entries = service.list()
-    
-    try:
-        if formato == "toml":
-            export_toml(path, entries, encryption_password=password)
-        else:
-            export_json(path, entries, encryption_password=password)
-    except Exception as e:
-        error(tr_multi(f"Eksporto fiaskis: {e}", f"Export failed: {e}", f"Echec de l'exportation: {e}"))
-        raise typer.Exit(1)
-    
-    info(tr_multi(f"Eksportis {len(entries)} vortojn al {path}", f"Exported {len(entries)} words to {path}", f"Exporte {len(entries)} mots vers {path}"))
+    _handle_export(path, formato=formato, password=password)
 
 
 @app.command("serci")
@@ -793,64 +468,29 @@ def serci(
     ),
 ) -> None:
     """Search word entries. Without args, list entries up to --limo."""
-    service = get_service()
-    
-    # Build filters dict from non-None values
-    filters = {}
-    if ligilo:
-        # Find linked entries
-        linked_entries = []
-        # TODO: implement link-based search
-    if lingvo:
-        filters["lingvo"] = lingvo
-    if tipo:
-        filters["tipo"] = tipo
-    if temo:
-        filters["temo"] = temo
-    if tono:
-        filters["tono"] = tono
-    if verko:
-        filters["verko"] = verko
-    if autoro:
-        filters["autoro"] = autoro
-    if nivelo_min:
-        filters["nivelo_min"] = nivelo_min
-    if nivelo_max:
-        filters["nivelo_max"] = nivelo_max
-    
-    # Handle date filters
-    if dato_de or dato_gis:
-        filters["dato_de"] = dato_de
-        filters["dato_gis"] = dato_gis
-    
-    # If no text query and no filters, list entries
-    if teksto is None and not filters:
-        entries = service.list(order_by=ordo, desc=False, limit=limo)
-    else:
-        # Use FTS search with filters
-        entries = service.search_advanced(
-            query=teksto or "",
-            filters=filters,
-            fuzzy=not preciza and not regex,
-            limit=limo,
-        )
-    
-    if uuid:
-        import json
-        uuids = [e["uuid"][:8] for e in entries]
-        console.print(json.dumps(uuids))
-        return
-    
-    if not entries:
-        info(tr_multi("Neniuj rezultoj", "No results", "Aucun resultat"))
-        return
-    
-    for entry in entries:
-        uuid = entry.get("uuid", "")[:8]
-        teksto = entry.get("teksto", "")
-        console.print(f"[cyan]{uuid}[/] [bold]{teksto}[/]")
-    
-    info(tr_multi(f"{len(entries)} rezultoj", f"{len(entries)} results", f"{len(entries)} resultats"))
+    entries = _run_search(
+        teksto=teksto,
+        ligilo=ligilo,
+        lingvo=lingvo,
+        tipo=tipo,
+        temo=temo,
+        tono=tono,
+        autoro=autoro,
+        verko=verko,
+        nivelo_min=nivelo_min,
+        nivelo_max=nivelo_max,
+        dato_de=dato_de,
+        dato_gis=dato_gis,
+        regex=regex,
+        preciza=preciza,
+        limo=limo,
+        ordo=ordo,
+        uuid=uuid,
+    )
+
+    selected = _display_search_results(entries, uuid=uuid)
+    if selected:
+        _show_entry(get_service(), selected)
 
 
 __all__ = ["app"]
