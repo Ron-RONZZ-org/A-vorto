@@ -82,18 +82,19 @@ If you need a utility that should be in A-core:
 
 ```
 src/A_vorto/
-├── __init__.py       # Plugin exports
-├── cli.py           # Typer app (11 commands)
-├── service.py       # CRUDService with FTS5
-├── utils.py         # Type maps, parsers, normalizers (TIPO_MAP, TONO_MAP, difino/uzo parsing, etikedoj, kategorio auto-detect)
+├── __init__.py           # Plugin exports
+├── cli.py               # Typer app (commands: vidi, aldoni, modifi, serci, list, etc.)
+├── service.py           # CRUDService with FTS5, links, and references
+├── display_helpers.py   # Rich Panel display for vidi (Markdown, metadata, links)
+├── search_helpers.py    # Interactive search via select_candidate()
+├── modify_helpers.py    # Data builders for aldoni/modifi
+├── manage_helpers.py    # Business logic for forigi, malfari, rubujo, etc.
+├── import_export_helpers.py  # Import/export via A-core utilities
+├── utils.py             # Type maps, parsers, normalizers
 └── data/
-    ├── storage.py  # SQLite (uses A.data.base + FTSConfig)
-    └── migrate.py # Schema migrations
-```
-
-## Search
-
-A-vorto uses A-core's FTS5 full-text search:
+    ├── storage.py       # SQLite (uses A.data.base + FTSConfig)
+    ├── migrate.py       # Schema migrations
+    └── migrate_from_autish.py  # Legacy data migration
 
 - Full-text search on `teksto` field
 - Filters: `lingvo`, `kategorio`, `tipo`, `temo`
