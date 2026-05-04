@@ -98,8 +98,18 @@ class VortoService:
         return entry
 
     def get(self, uuid: str) -> dict | None:
-        """Get entry by UUID."""
-        return self.crud.get(uuid)
+        """Get entry by UUID (exact, then prefix match)."""
+        entry = self.crud.get(uuid)
+        if entry:
+            return entry
+        # Prefix match fallback
+        from A_vorto.data.storage import get_db
+        db = get_db()
+        row = db.execute_one(
+            "SELECT * FROM vorto WHERE uuid LIKE ? AND forigita_je IS NULL",
+            (f"{uuid}%",),
+        )
+        return dict(row) if row else None
 
     def get_by_id(self, uuid: str) -> dict | None:
         """Get entry by UUID (alias for get)."""

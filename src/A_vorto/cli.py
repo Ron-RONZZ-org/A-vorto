@@ -1,7 +1,5 @@
 """CLI for vorto command."""
 
-from __future__ import annotations
-
 import json
 from pathlib import Path
 from typing import List, Optional
@@ -145,29 +143,25 @@ def vidi(
         error(tr_multi("--kopii/--semantika-kopii requires UUID", "--kopii/--semantika-kopii requires UUID", "--kopii/--semantika-kopii necessite UUID"))
         raise typer.Exit(1)
     
-    # No UUID - list latest/oldest 50
+    # No UUID - list latest/oldest 50, or look up by text
     if uid is None:
         if teksto:
-            # Look up by title
             entry = service.find_by_text_prefix(teksto)
             if not entry:
                 error(tr_multi(f"Vorto {teksto} ne trovitas", f"Word {teksto} not found", f"Mot {teksto} non trouve"))
                 raise typer.Exit(1)
+            # Text found - entry is set, fall through to display below
         else:
-            # List entries
             entries = service.list(order_by="kreita_je", desc=not inversa, limit=50)
             info(tr_multi(f"{len(entries)} rezulto(j)", f"{len(entries)} result(s)", f"{len(entries)} resultat(s)"))
             _display_results(entries)
             return
-    
-    lookup_uid = uid[1:] if uid and uid.startswith("#") else uid
-    entry = service.get(lookup_uid)
-    
-    if not entry:
-        # Try fuzzy/closest matches
-        # For now, just error
-        error(tr_multi(f"Vorto {uid} ne trovitas", f"Word {uid} not found", f"Mot {uid} non trouve"))
-        raise typer.Exit(1)
+    else:
+        lookup_uid = uid[1:] if uid and uid.startswith("#") else uid
+        entry = service.get(lookup_uid)
+        if not entry:
+            error(tr_multi(f"Vorto {uid} ne trovitas", f"Word {uid} not found", f"Mot {uid} non trouve"))
+            raise typer.Exit(1)
     
     # Handle clipboard copy
     if kopii or semantika_kopii:
@@ -183,12 +177,13 @@ def vidi(
     # Show all fields or only non-empty
     def show_field(label: str, value) -> bool:
         """Check if field should be displayed."""
-        if show_all:
+        if cxio:
             return True  # Show all in show-all mode
         # Otherwise show if value exists
         if value is None:
             return False
-        if isinstance(value, (str, list, dict)):
+        # Use type name to avoid potential shadowing of builtins
+        if type(value).__name__ in ('str', 'list', 'dict'):
             return bool(value)
         return True
 
@@ -202,10 +197,10 @@ def vidi(
     tipo = entry.get("tipo")
     if show_field("Tipo", tipo):
         if tipo:
-            if isinstance(tipo, list):
-                display_tipo = ", ".join(str(t) for t in tipo)
+            if isinstance(tipo, str):
+                display_tipo = tipo
             else:
-                display_tipo = str(tipo)
+                display_tipo = ", ".join(str(t) for t in tipo)
         else:
             display_tipo = tr_multi("(malplena)", "(empty)", "(vide)")
         console.print(f"[bold cyan]Tipo:[/] {display_tipo}")
@@ -227,8 +222,16 @@ def vidi(
         console.print(f"[bold cyan]Verko:[/] {val}")
 
     # Show definitions with usage examples
-    difinoj = entry.get("difinoj") or []
-    uzoj = entry.get("uzoj") or []
+    difinoj_raw = entry.get("difinoj") or "[]"
+    uzoj_raw = entry.get("uzoj") or "[]"
+    if isinstance(difinoj_raw, str):
+        difinoj = json.loads(difinoj_raw) if difinoj_raw.strip() else []
+    else:
+        difinoj = difinoj_raw or []
+    if isinstance(uzoj_raw, str):
+        uzoj = json.loads(uzoj_raw) if uzoj_raw.strip() else []
+    else:
+        uzoj = uzoj_raw or []
     if show_field("Difinoj", difinoj):
         if difinoj:
             console.print("[bold cyan]Difinoj:[/]")
@@ -241,7 +244,11 @@ def vidi(
             console.print(f"[bold cyan]Difinoj:[/]  {tr_multi('(malplena)', '(empty)', '(vide)')}")
 
     # Show tags
-    etikedoj = entry.get("etikedoj") or {}
+    etikedoj_raw = entry.get("etikedoj") or "{}"
+    if isinstance(etikedoj_raw, str):
+        etikedoj = json.loads(etikedoj_raw) if etikedoj_raw.strip() else {}
+    else:
+        etikedoj = etikedoj_raw or {}
     if show_field("Etikedoj", etikedoj):
         if etikedoj and isinstance(etikedoj, dict):
             console.print(f"[bold cyan]Etikedoj:[/]")
@@ -251,7 +258,11 @@ def vidi(
             console.print(f"[bold cyan]Etikedoj:[/]  {tr_multi('(malplena)', '(empty)', '(vide)')}")
 
     # Show links (as resolved references when show_all, as UUIDs otherwise)
-    ligiloj = entry.get("ligiloj") or []
+    ligiloj_raw = entry.get("ligiloj") or "[]"
+    if isinstance(ligiloj_raw, str):
+        ligiloj = json.loads(ligiloj_raw) if ligiloj_raw.strip() else []
+    else:
+        ligiloj = ligiloj_raw or []
     if show_field("Ligiloj", ligiloj):
         if ligiloj:
             console.print(f"[bold cyan]Ligiloj:[/]")
@@ -269,7 +280,7 @@ def vidi(
     # Show linked entries and references if --ref flag is set
     if ref:
         # Get links from A.core.links
-        links = service.get_linked_entries(uuid)
+        links = service.get_linked_entries(uid)
         
         if links["outgoing"]:
             console.print("[bold cyan]Ligiloj (elirantaj):[/]")
@@ -300,7 +311,7 @@ def vidi(
         preview_markdown(entry["teksto"], title=entry["teksto"])
 
     # Show timestamps
-    if show_all:
+    if cxio:
         console.print(f"[bold cyan]Kreita:[/] {entry.get('kreita_je') or tr_multi('(nekonata)', '(unknown)', '(inconnu)')}")
         console.print(f"[bold cyan]Modifita:[/] {entry.get('modifita_je') or tr_multi('(nekonata)', '(unknown)', '(inconnu)')}")
     else:
@@ -312,7 +323,7 @@ def vidi(
 def aldoni(
     teksto: str = typer.Argument(..., help=tr_multi("Word text", "Word text", "Texte du mot")),
     lingvo: Optional[str] = typer.Option(None, "--lingvo", "-l", help=tr_multi("Language", "Language", "Langue")),
-    kategorio: Optional[str] = typer.Option(None, "--kategorio", "-k", help=tr_multi("Category (auto-detected if omitted)", "Category (auto-detected if omitted)", "Categorie (auto-detectee si omise)")),
+    kategorio: Optional[str] = typer.Option(None, "--kategorio", help=tr_multi("Category (auto-detected if omitted)", "Category (auto-detected if omitted)", "Categorie (auto-detectee si omise)")),
     tipo: Optional[str] = typer.Option(None, "--tipo", "-t", help=tr_multi("Type abbreviation(s), comma/semicolon-separated (e.g. su,aj)", "Type abbreviation(s), comma/semicolon-separated (e.g. su,aj)", "Abreviation(s) de type, separees par virgule/point-virgule")),
     temo: Optional[str] = typer.Option(None, "--temo", help=tr_multi("Theme", "Theme", "Theme")),
     tono: Optional[str] = typer.Option(None, "--tono", help=tr_multi("Tonality (e.g. nf, fo, am)", "Tonality (e.g. nf, fo, am)", "Tonalite (ex. nf, fo, am)")),
@@ -359,7 +370,7 @@ def aldoni(
     if lingvo:
         data["lingvo"] = lingvo
     if effective_tipo is not None:
-        data["tipo"] = effective_tipo
+        data["tipo"] = ",".join(effective_tipo)
     if temo:
         data["temo"] = temo
     if effective_tono is not None:
@@ -396,11 +407,7 @@ def aldoni(
     if ligiloj:
         data["ligiloj"] = list(ligiloj)
 
-    # Serialize JSON columns to strings for SQLite
-    for field in ("difinoj", "uzoj", "etikedoj", "ligiloj"):
-        if field in data:
-            data[field] = json.dumps(data[field], ensure_ascii=False)
-
+    # VortoService handles JSON serialization - don't serialize here
     entry = service.create(data)
     info(tr_multi(f"Aldonis {teksto}", f"Added {teksto}", f"Ajoute {teksto}"))
     console.print(f"[green]UUID:[/] {entry.get('uuid')}")
@@ -418,7 +425,7 @@ def modifi(
     uuid: str,
     teksto: Optional[str] = typer.Option(None, "--teksto", "-t", help=tr_multi("New word text", "New word text", "Nouveau texte")),
     lingvo: Optional[str] = typer.Option(None, "--lingvo", "-l", help=tr_multi("Language", "Language", "Langue")),
-    kategorio: Optional[str] = typer.Option(None, "--kategorio", "-k", help=tr_multi("Category", "Category", "Categorie")),
+    kategorio: Optional[str] = typer.Option(None, "--kategorio", help=tr_multi("Category", "Category", "Categorie")),
     tipo: Optional[str] = typer.Option(None, "--tipo", help=tr_multi("Type abbreviation(s), comma/semicolon-separated", "Type abbreviation(s), comma/semicolon-separated", "Abreviation(s) de type, separees par virgule/point-virgule")),
     temo: Optional[str] = typer.Option(None, "--temo", help=tr_multi("Theme", "Theme", "Theme")),
     tono: Optional[str] = typer.Option(None, "--tono", help=tr_multi("Tonality (e.g. nf, fo, am)", "Tonality (e.g. nf, fo, am)", "Tonalite (ex. nf, fo, am)")),
@@ -468,9 +475,9 @@ def modifi(
     if tipo is not None:
         effective = normalize_tipo(tipo)
         if effective is not None:
-            data["tipo"] = effective
+            data["tipo"] = ",".join(effective)
     if clear_tipo:
-        data["tipo"] = []
+        data["tipo"] = None
 
     # tono: normalize if provided
     if tono is not None:
@@ -521,11 +528,6 @@ def modifi(
     if not data:
         error(tr_multi("Neniuj sxangoj", "No changes", "Aucun changement"))
         raise typer.Exit(1)
-
-    # Serialize JSON columns to strings for SQLite
-    for field in ("difinoj", "uzoj", "etikedoj", "ligiloj"):
-        if field in data:
-            data[field] = json.dumps(data[field], ensure_ascii=False)
 
     entry = service.update(uuid, data)
     info(tr_multi(f"Modifikas {uuid}", f"Modified {uuid}", f"Modifie {uuid}"))
@@ -778,10 +780,10 @@ def serci(
         help=tr_multi("Max results (default 10)", "Max results (default 10)", "Nombre max de resultats (defaut 10)"),
     ),
     ordo: str = typer.Option(
-        "graveco",
+        "nivelo",
         "-o",
         "--ordo",
-        help=tr_multi("Order: graveco/g, dato/d, inversa-dato/id", "Order: graveco/g, dato/d, inversa-dato/id", "Ordre: graveco/g, dato/d, inversa-dato/id"),
+        help=tr_multi("Order: nivelo/n, dato/d, inversa-dato/id", "Order: nivelo/n, dato/d, inversa-dato/id", "Ordre: nivelo/n, dato/d, inversa-dato/id"),
     ),
     uuid: bool = typer.Option(
         False,
@@ -827,7 +829,7 @@ def serci(
     else:
         # Use FTS search with filters
         entries = service.search_advanced(
-            teksto or "",
+            query=teksto or "",
             filters=filters,
             fuzzy=not preciza and not regex,
             limit=limo,
