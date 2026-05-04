@@ -24,7 +24,7 @@ requires-dist = [
     { name = "pytest-mock", marker = "extra == 'dev'", specifier = ">=3.14.0" },
     { name = "rich", specifier = ">=13.0.0" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.4.0" },
-    { name = "typer", extras = ["rich"], specifier = ">=0.12.0" },
+    { name = "typer", specifier = ">=0.12.0" },
 ]
 provides-extras = ["dev"]
 

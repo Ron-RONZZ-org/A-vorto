@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 from typing import Any
 
+from A import serialize_json_columns
 from A.core.service import CRUDService
 from A.core.links import add_link, remove_link, get_outgoing, get_incoming, remove_all_for_entry
 from A.core.references import get_refs_in_field, resolve as resolve_ref
@@ -18,13 +19,6 @@ MIGRATION_SENTINEL = "vorto_links_migrated"
 
 # JSON columns that need serialization to string for SQLite
 JSON_COLUMNS = ("difinoj", "uzoj", "etikedoj", "ligiloj")
-
-
-def _serialize_json_column(value: Any) -> str:
-    """Serialize list/dict to JSON string for SQLite."""
-    if isinstance(value, (list, dict)):
-        return json.dumps(value, ensure_ascii=False)
-    return value
 
 
 class VortoService:
@@ -78,10 +72,7 @@ class VortoService:
     def create(self, data: dict) -> dict:
         """Create entry and sync links."""
         # Serialize JSON columns before passing to CRUDService
-        serialized = {**data}
-        for col in JSON_COLUMNS:
-            if col in serialized:
-                serialized[col] = _serialize_json_column(serialized[col])
+        serialized = serialize_json_columns(data, JSON_COLUMNS)
         entry = self.crud.create(serialized)
         self._sync_links(entry)
         return entry
@@ -89,10 +80,7 @@ class VortoService:
     def update(self, uuid: str, data: dict) -> dict:
         """Update entry and sync links."""
         # Serialize JSON columns before passing to CRUDService
-        serialized = {**data}
-        for col in JSON_COLUMNS:
-            if col in serialized:
-                serialized[col] = _serialize_json_column(serialized[col])
+        serialized = serialize_json_columns(data, JSON_COLUMNS)
         entry = self.crud.update(uuid, serialized)
         self._sync_links(entry)
         return entry
