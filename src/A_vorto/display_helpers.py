@@ -254,4 +254,40 @@ def _show_references(service: Any, entry: dict[str, Any]) -> None:
             console.print(f"  {exists_mark} {display}")
 
 
-__all__ = ["show_field", "_show_entry"]
+def _preview_entry(data: dict[str, Any]) -> None:
+    """Show a compact text preview of entry data before creation.
+
+    Args:
+        data: Entry data dict (teksto, lingvo, tipo, difinoj, etc.)
+    """
+    lines: list[str] = []
+    lines.append(f"[bold]{data.get('teksto', '')}[/]")
+
+    parts: list[str] = []
+    if data.get("lingvo"):
+        parts.append(str(data["lingvo"]))
+    tipo = data.get("tipo", "")
+    if tipo:
+        parts.append(str(tipo) if isinstance(tipo, str) else ", ".join(tipo))
+    if parts:
+        lines.append(f"[dim]{' | '.join(parts)}[/]")
+
+    difinoj = data.get("difinoj", [])
+    if difinoj:
+        if isinstance(difinoj, str):
+            try:
+                difinoj = json.loads(difinoj)
+            except (json.JSONDecodeError, TypeError):
+                difinoj = []
+        if difinoj:
+            lines.append("")
+            for d in difinoj[:3]:
+                lines.append(f"  {d}")
+            if len(difinoj) > 3:
+                lines.append(f"  ... ({len(difinoj)} difinoj)")
+
+    for line in lines:
+        console.print(line)
+
+
+__all__ = ["show_field", "_show_entry", "_preview_entry"]

@@ -9,9 +9,9 @@ from A import error, info, tr_multi
 from A.utils.output import console, print_table
 
 from A_vorto.service import get_service
-from A_vorto.display_helpers import _show_entry
+from A_vorto.display_helpers import _show_entry, _preview_entry
 from A_vorto.search_helpers import _run_search, _display_search_results
-from A_vorto.modify_helpers import _build_create_data, _build_update_data, _handle_create_result
+from A_vorto.modify_helpers import _build_create_data, _build_update_data, _handle_create_result, _find_duplicate
 from A_vorto.manage_helpers import _handle_forigi, _handle_malfari, _handle_rubujo, _handle_restaurigi, _handle_senrubujigi
 from A_vorto.import_export_helpers import _handle_import, _handle_export
 
@@ -196,10 +196,17 @@ def aldoni(
         "--semantika-kopii",
         help=tr_multi("Copy [teksto](#uuid) to clipboard", "Copy [teksto](#uuid) to clipboard", "Copier [texte](#uuid) dans le presse-papiers"),
     ),
+    yes: bool = typer.Option(
+        False,
+        "-y",
+        "--yes",
+        help=tr_multi("Skip confirmation prompt", "Skip confirmation prompt", "Preterpasi konfirmon"),
+    ),
 ) -> None:
-    """Add a new word entry."""
+    """Add a new word entry. Checks for duplicates and confirms before creating."""
     service = get_service()
 
+    # Build creation data
     data = _build_create_data(
         teksto=teksto,
         lingvo=lingvo,
@@ -216,6 +223,41 @@ def aldoni(
         verko=verko,
     )
 
+    # Check for duplicate by teksto
+    existing = _find_duplicate(teksto)
+    if existing:
+        info(tr_multi(
+            f"Jam ekzistas: \"{existing['teksto']}\" (#{existing['uuid'][:8]})",
+            f"Already exists: \"{existing['teksto']}\" (#{existing['uuid'][:8]})",
+            f"Existe deja: \"{existing['teksto']}\" (#{existing['uuid'][:8]})",
+        ))
+        if not yes:
+            replace = typer.confirm(tr_multi(
+                "Anstatauigi la ekzistantan?",
+                "Replace the existing entry?",
+                "Remplacer l'entree existante?",
+            ), default=False)
+            if not replace:
+                info(tr_multi("Nuligita", "Cancelled", "Annule"))
+                return
+        # Update existing entry
+        entry = service.update(existing["uuid"], data)
+        info(tr_multi(f"Gxisdatigis {teksto}", f"Updated {teksto}", f"Mis a jour {teksto}"))
+        return
+
+    # Preview before creation
+    if not yes:
+        _preview_entry(data)
+        confirmed = typer.confirm(tr_multi(
+            "Cxu krei tiun eniron?",
+            "Create this entry?",
+            "Creer cette entree?",
+        ), default=True)
+        if not confirmed:
+            info(tr_multi("Nuligita", "Cancelled", "Annule"))
+            return
+
+    # Create entry
     entry = service.create(data)
     _handle_create_result(entry, teksto, kopii, semantika_kopii)
 
