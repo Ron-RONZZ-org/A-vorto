@@ -42,7 +42,8 @@ app = typer.Typer(
 )
 
 
-@app.command()
+@app.command("ls")
+@app.command("list", hidden=True)
 def list(
     order_by: str = typer.Option(
         "teksto",
