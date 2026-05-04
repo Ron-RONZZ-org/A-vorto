@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from typing import List, Optional
 
@@ -395,6 +396,11 @@ def aldoni(
     if ligiloj:
         data["ligiloj"] = list(ligiloj)
 
+    # Serialize JSON columns to strings for SQLite
+    for field in ("difinoj", "uzoj", "etikedoj", "ligiloj"):
+        if field in data:
+            data[field] = json.dumps(data[field], ensure_ascii=False)
+
     entry = service.create(data)
     info(tr_multi(f"Aldonis {teksto}", f"Added {teksto}", f"Ajoute {teksto}"))
     console.print(f"[green]UUID:[/] {entry.get('uuid')}")
@@ -515,6 +521,11 @@ def modifi(
     if not data:
         error(tr_multi("Neniuj sxangoj", "No changes", "Aucun changement"))
         raise typer.Exit(1)
+
+    # Serialize JSON columns to strings for SQLite
+    for field in ("difinoj", "uzoj", "etikedoj", "ligiloj"):
+        if field in data:
+            data[field] = json.dumps(data[field], ensure_ascii=False)
 
     entry = service.update(uuid, data)
     info(tr_multi(f"Modifikas {uuid}", f"Modified {uuid}", f"Modifie {uuid}"))

@@ -16,6 +16,16 @@ _vorto_service: VortoService | None = None
 # Migration sentinel key
 MIGRATION_SENTINEL = "vorto_links_migrated"
 
+# JSON columns that need serialization to string for SQLite
+JSON_COLUMNS = ("difinoj", "uzoj", "etikedoj", "ligiloj")
+
+
+def _serialize_json_column(value: Any) -> str:
+    """Serialize list/dict to JSON string for SQLite."""
+    if isinstance(value, (list, dict)):
+        return json.dumps(value, ensure_ascii=False)
+    return value
+
 
 class VortoService:
     """Vorto service wrapping CRUDService with link sync and references support.
@@ -67,13 +77,23 @@ class VortoService:
 
     def create(self, data: dict) -> dict:
         """Create entry and sync links."""
-        entry = self.crud.create(data)
+        # Serialize JSON columns before passing to CRUDService
+        serialized = {**data}
+        for col in JSON_COLUMNS:
+            if col in serialized:
+                serialized[col] = _serialize_json_column(serialized[col])
+        entry = self.crud.create(serialized)
         self._sync_links(entry)
         return entry
 
     def update(self, uuid: str, data: dict) -> dict:
         """Update entry and sync links."""
-        entry = self.crud.update(uuid, data)
+        # Serialize JSON columns before passing to CRUDService
+        serialized = {**data}
+        for col in JSON_COLUMNS:
+            if col in serialized:
+                serialized[col] = _serialize_json_column(serialized[col])
+        entry = self.crud.update(uuid, serialized)
         self._sync_links(entry)
         return entry
 
@@ -162,6 +182,14 @@ class VortoService:
             (f"{text.lower()}%",),
         )
         return dict(row) if row else None
+
+
+def get_service() -> VortoService:
+    """Get the singleton VortoService for vorto table with links and references."""
+    global _vorto_service
+    if _vorto_service is None:
+        _vorto_service = VortoService()
+    return _vorto_service
 
 
 __all__ = ["get_service", "VortoService"]
