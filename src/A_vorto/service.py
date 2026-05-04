@@ -9,6 +9,7 @@ from A import serialize_json_columns
 from A.core.service import CRUDService
 from A.core.links import add_link, remove_link, get_outgoing, get_incoming, remove_all_for_entry
 from A.core.references import get_refs_in_field, resolve as resolve_ref
+from A.core.linking import sync_links_for_entry
 
 from A_vorto.data.storage import get_db, VORTO_FTS_CONFIG
 
@@ -59,15 +60,26 @@ class VortoService:
         set_setting(MIGRATION_SENTINEL, True)
 
     def _sync_links(self, entry: dict) -> None:
-        """Sync ligiloj from entry JSON to A.core.links."""
+        """Sync ligiloj from entry JSON + inline refs to A.core.links."""
         uuid = entry["uuid"]
         ligiloj = entry.get("ligiloj") or []
-        
-        # Clear existing links for this entry, then rebuild
-        remove_all_for_entry("vorto", uuid)
-        for target_uuid in ligiloj:
-            if target_uuid and uuid != target_uuid:
-                add_link("vorto", uuid, "vorto", target_uuid)
+
+        # Ensure ligiloj is a list (may be JSON string from DB)
+        if isinstance(ligiloj, str):
+            try:
+                ligiloj = json.loads(ligiloj) if ligiloj.strip() else []
+            except (json.JSONDecodeError, TypeError):
+                ligiloj = []
+
+        sync_links_for_entry(
+            uuid=uuid,
+            source_type="vorto",
+            text_fields={
+                "difinoj": entry.get("difinoj") or [],
+                "uzoj": entry.get("uzoj") or [],
+            },
+            explicit_links=ligiloj if isinstance(ligiloj, list) else [],
+        )
 
     def create(self, data: dict) -> dict:
         """Create entry and sync links."""
