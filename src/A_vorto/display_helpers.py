@@ -7,12 +7,9 @@ from typing import Any
 
 from rich.panel import Panel
 from rich.text import Text
-from rich.markdown import Markdown
-from rich.console import Group
 
 from A import tr_multi, copy_to_clipboard
 from A.utils.output import console
-from A.core.markdown_parser import render_markdown
 
 
 def show_field(label: str, value: Any, cxio: bool = False) -> bool:
@@ -137,14 +134,12 @@ def _show_entry(
     if show_field("Difinoj", difinoj):
         section_label = "\n[bold]difinoj:[/]"
         if len(difinoj) == 1:
-            rendered = render_markdown(difinoj[0])
-            section_label += f"\n{rendered}"
+            section_label += f"\n[bold]{difinoj[0]}[/]"
             if uzoj and uzoj[0]:
                 section_label += f"\n[italic]{uzoj[0]}[/]"
         else:
             for i, d in enumerate(difinoj, 1):
-                rendered = render_markdown(d)
-                section_label += f"\n{i}. {rendered}"
+                section_label += f"\n[bold]{i}. {d}[/]"
                 if i - 1 < len(uzoj) and uzoj[i - 1]:
                     section_label += f"\n   [italic]{uzoj[i - 1]}[/]"
         lines.append(section_label)
