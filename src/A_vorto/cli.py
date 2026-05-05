@@ -36,8 +36,8 @@ app = typer.Typer(
         "Mia Vorto — personal wordbook microapp.",
         "Mia Vorto — microapplication de vocabulaire personnel.",
     ),
-    no_args_is_help=False,
-    invoke_without_command=True,
+    no_args_is_help=True,
+    context_settings={"help_option_names": ["-h", "--help", "--helpo"]},
     context_settings={"help_option_names": ["-h", "--help", "--helpo"]},
 )
 
