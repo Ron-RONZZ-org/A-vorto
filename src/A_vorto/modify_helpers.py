@@ -247,9 +247,9 @@ def _handle_create_result(entry: dict[str, Any], teksto: str, kopii: bool, seman
 
     if kopii or semantika_kopii:
         if kopii:
-            copy_to_clipboard(f"#{entry['uuid'][:8]}")
+            copy_to_clipboard(entry['uuid'][:8])
         if semantika_kopii:
-            copy_to_clipboard(f"[{entry['teksto']}](#{entry['uuid'][:8]})")
+            copy_to_clipboard(f"[{entry['teksto']}]({entry['uuid'][:8]})")
 
 
 __all__ = ["_build_create_data", "_build_update_data", "_handle_create_result"]

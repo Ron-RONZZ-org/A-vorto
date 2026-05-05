@@ -59,6 +59,18 @@ class VortoService:
         
         set_setting(MIGRATION_SENTINEL, True)
 
+    @staticmethod
+    def _resolve_uuid(uuid: str) -> str | None:
+        """Resolve a potentially short or #-prefixed UUID to a full UUID.
+
+        Strips leading ``#`` if present, then tries exact match first,
+        falling back to prefix match. Returns the full UUID string
+        or ``None`` if no entry is found.
+        """
+        raw = uuid[1:] if uuid.startswith("#") else uuid
+        entry = get_service().get(raw)
+        return entry["uuid"] if entry else None
+
     def _sync_links(self, entry: dict) -> None:
         """Sync ligiloj from entry JSON + inline refs to A.core.links."""
         uuid = entry["uuid"]
@@ -90,38 +102,67 @@ class VortoService:
         return entry
 
     def update(self, uuid: str, data: dict) -> dict:
-        """Update entry and sync links."""
-        # Serialize JSON columns before passing to CRUDService
+        """Update entry and sync links.
+
+        Resolves short or ``#``-prefixed UUIDs to full UUID first.
+        """
+        resolved = self._resolve_uuid(uuid)
+        if not resolved:
+            raise ValueError(f"Entry not found: {uuid}")
         serialized = serialize_json_columns(data, JSON_COLUMNS)
-        entry = self.crud.update(uuid, serialized)
+        entry = self.crud.update(resolved, serialized)
         self._sync_links(entry)
         return entry
 
     def delete(self, uuid: str, soft: bool = True) -> None:
-        """Delete entry and remove associated links."""
-        self.crud.delete(uuid, soft=soft)
-        remove_all_for_entry("vorto", uuid)
+        """Delete entry and remove associated links.
+
+        Resolves short or ``#``-prefixed UUIDs to full UUID first.
+        """
+        resolved = self._resolve_uuid(uuid)
+        if not resolved:
+            return  # Nothing to delete
+        self.crud.delete(resolved, soft=soft)
+        remove_all_for_entry("vorto", resolved)
 
     def restore(self, uuid: str) -> dict | None:
-        """Restore entry from trash and sync links."""
-        entry = self.crud.restore(uuid)
+        """Restore entry from trash and sync links.
+
+        Resolves short or ``#``-prefixed UUIDs to full UUID first.
+        """
+        resolved = self._resolve_uuid(uuid)
+        if not resolved:
+            return None
+        entry = self.crud.restore(resolved)
         if entry:
             self._sync_links(entry)
         return entry
 
     def get(self, uuid: str) -> dict | None:
-        """Get entry by UUID (exact, then prefix match)."""
-        entry = self.crud.get(uuid)
+        """Get entry by UUID, stripping optional ``#`` prefix.
+
+        Tries exact match first, then prefix match for short UUIDs.
+        """
+        raw = uuid[1:] if uuid.startswith("#") else uuid
+        entry = self.crud.get(raw)
         if entry:
             return entry
-        # Prefix match fallback
+        # Prefix match fallback for short UUIDs
         from A_vorto.data.storage import get_db
         db = get_db()
         row = db.execute_one(
             "SELECT * FROM vorto WHERE uuid LIKE ? AND forigita_je IS NULL",
-            (f"{uuid}%",),
+            (f"{raw}%",),
         )
         return dict(row) if row else None
+
+    def _resolve_uuid(self, uuid: str) -> str | None:
+        """Resolve a short or ``#``-prefixed UUID to its full form.
+
+        Returns the full UUID string, or ``None`` if no matching entry exists.
+        """
+        entry = self.get(uuid)
+        return entry["uuid"] if entry else None
 
     def get_by_id(self, uuid: str) -> dict | None:
         """Get entry by UUID (alias for get)."""

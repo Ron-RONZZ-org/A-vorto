@@ -118,13 +118,13 @@ def vidi(
         False,
         "-k",
         "--kopii",
-        help=tr_multi("Copy #uuid to clipboard", "Copy #uuid to clipboard", "Copier #uuid dans le presse-papiers"),
+        help=tr_multi("Copy UUID to clipboard", "Copy UUID to clipboard", "Copier UUID dans le presse-papiers"),
     ),
     semantika_kopii: bool = typer.Option(
         False,
         "-sk",
         "--semantika-kopii",
-        help=tr_multi("Copy [teksto](#uuid) to clipboard", "Copy [teksto](#uuid) to clipboard", "Copier [texte](#uuid) dans le presse-papiers"),
+        help=tr_multi("Copy [teksto](uuid) to clipboard", "Copy [teksto](uuid) to clipboard", "Copier [texte](uuid) dans le presse-papiers"),
     ),
 ) -> None:
     """View a word entry, or list latest 50 entries when called without argument."""
@@ -188,13 +188,13 @@ def aldoni(
         False,
         "-k",
         "--kopii",
-        help=tr_multi("Copy #uuid to clipboard", "Copy #uuid to clipboard", "Copier #uuid dans le presse-papiers"),
+        help=tr_multi("Copy UUID to clipboard", "Copy UUID to clipboard", "Copier UUID dans le presse-papiers"),
     ),
     semantika_kopii: bool = typer.Option(
         False,
         "-sk",
         "--semantika-kopii",
-        help=tr_multi("Copy [teksto](#uuid) to clipboard", "Copy [teksto](#uuid) to clipboard", "Copier [texte](#uuid) dans le presse-papiers"),
+        help=tr_multi("Copy [teksto](uuid) to clipboard", "Copy [teksto](uuid) to clipboard", "Copier [texte](uuid) dans le presse-papiers"),
     ),
     yes: bool = typer.Option(
         False,
@@ -227,9 +227,9 @@ def aldoni(
     existing = _find_duplicate(teksto)
     if existing:
         info(tr_multi(
-            f"Jam ekzistas: \"{existing['teksto']}\" (#{existing['uuid'][:8]})",
-            f"Already exists: \"{existing['teksto']}\" (#{existing['uuid'][:8]})",
-            f"Existe deja: \"{existing['teksto']}\" (#{existing['uuid'][:8]})",
+            f"Jam ekzistas: \"{existing['teksto']}\" ({existing['uuid'][:8]})",
+            f"Already exists: \"{existing['teksto']}\" ({existing['uuid'][:8]})",
+            f"Existe deja: \"{existing['teksto']}\" ({existing['uuid'][:8]})",
         ))
         if not yes:
             replace = typer.confirm(tr_multi(
@@ -264,7 +264,9 @@ def aldoni(
 
 @app.command("modifi")
 def modifi(
-    uuid: str,
+    uuid: str = typer.Argument(
+        ..., help=tr_multi("UUID (or #UUID) of entry to modify", "UUID (or #UUID) of entry to modify", "UUID (ou #UUID) de l'entree a modifier")
+    ),
     teksto: Optional[str] = typer.Option(None, "--teksto", "-t", help=tr_multi("New word text", "New word text", "Nouveau texte")),
     lingvo: Optional[str] = typer.Option(None, "--lingvo", "-l", help=tr_multi("Language", "Language", "Langue")),
     kategorio: Optional[str] = typer.Option(None, "--kategorio", help=tr_multi("Category", "Category", "Categorie")),
@@ -326,7 +328,9 @@ def modifi(
 
 @app.command("forigi")
 def forigi(
-    uuid: str,
+    uuid: str = typer.Argument(
+        ..., help=tr_multi("UUID (or #UUID) of entry to delete", "UUID (or #UUID) of entry to delete", "UUID (ou #UUID) de l'entree a supprimer")
+    ),
     hard: bool = typer.Option(
         False,
         "--hard",
@@ -359,7 +363,9 @@ def rubujo(
 
 @app.command("restaurigi")
 def restaurigi(
-    uuid: str,
+    uuid: str = typer.Argument(
+        ..., help=tr_multi("UUID (or #UUID) to restore", "UUID (or #UUID) to restore", "UUID (ou #UUID) a restaurer")
+    ),
 ) -> None:
     """Restore an entry from trash."""
     _handle_restaurigi(uuid)

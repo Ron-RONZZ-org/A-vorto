@@ -161,14 +161,14 @@ def _show_entry(
     # Handle clipboard copy
     if kopii or semantika_kopii:
         if kopii:
-            copy_to_clipboard(f"#{entry['uuid'][:8]}")
+            copy_to_clipboard(entry['uuid'][:8])
         if semantika_kopii:
-            copy_to_clipboard(f"[{entry['teksto']}](#{entry['uuid'][:8]})")
+            copy_to_clipboard(f"[{entry['teksto']}]({entry['uuid'][:8]})")
 
     # Build panel title
     title = Text()
     title.append(str(entry.get("teksto", "") or ""), style="bold")
-    title.append(f"  #{entry['uuid'][:8]}", style="dim")
+    title.append(f"  {entry['uuid'][:8]}", style="dim")
 
     # Build content lines
     lines: list[str] = []
