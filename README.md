@@ -20,6 +20,10 @@ A-vorto - personal wordbook (vortaro) microapp
 ## Install
 
 ```bash
+# Recommended — fast, reliable
+pip install uv && uv pip install A-vorto
+
+# Traditional
 pip install A-vorto
 ```
 
@@ -58,7 +62,7 @@ A vorto serci "cœur"
 # With language filter
 A vorto serci "hello" --lingvo en
 
-# Fuzzy search (requires: pip install rapidfuzz)
+# Fuzzy search (requires: uv pip install rapidfuzz)
 A vorto serci "heelo" --fuzzy
 ```
 

@@ -8,7 +8,8 @@ build:
   tools:
     python: "3.11"
   commands:
-    - pip install mkdocs-material
+    - pip install uv
+    - uv pip install mkdocs-material --system
     - mkdocs build --strict
 
 mkdocs:
