@@ -1,7 +1,7 @@
 """CLI for vorto command."""
 
 from pathlib import Path
-from typing import List, Optional
+from typing import Annotated, List, Optional
 
 import typer
 
@@ -327,9 +327,13 @@ def modifi(
 
 @app.command("forigi")
 def forigi(
-    uuid: str = typer.Argument(
-        ..., help=tr_multi("UUID (or #UUID) of entry to delete", "UUID (or #UUID) of entry to delete", "UUID (ou #UUID) de l'entree a supprimer")
-    ),
+    uuids: Annotated[list[str], typer.Argument(
+        ..., help=tr_multi(
+            "UUID (or #UUID) of entries to delete (multiple)",
+            "UUID (or #UUID) of entries to delete (multiple)",
+            "UUID (ou #UUID) des entrees a supprimer (plusieurs)",
+        )
+    )],
     hard: bool = typer.Option(
         False,
         "--hard",
@@ -337,8 +341,9 @@ def forigi(
         help=tr_multi("Permanent delete (no trash)", "Permanent delete (no trash)", "Suppression permanente"),
     ),
 ) -> None:
-    """Delete a word entry."""
-    _handle_forigi(uuid, hard=hard)
+    """Delete word entries."""
+    for uid in uuids:
+        _handle_forigi(uid, hard=hard)
 
 
 @app.command("malfari")

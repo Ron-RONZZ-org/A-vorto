@@ -22,7 +22,7 @@ def _handle_forigi(uuid: str, hard: bool = False) -> None:
     existing = service.get(uuid)
     if not existing:
         error(tr_multi(f"Vorto {uuid} ne trovitas", f"Word {uuid} not found", f"Mot {uuid} non trouve"))
-        raise SystemExit(1)
+        return
 
     soft = not hard
     service.delete(uuid, soft=soft)
