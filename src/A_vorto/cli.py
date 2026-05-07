@@ -1,3 +1,4 @@
+from A import confirm_action
 """CLI for vorto command."""
 
 from pathlib import Path
@@ -231,7 +232,7 @@ def aldoni(
             f"Existe deja: \"{existing['teksto']}\" ({existing['uuid'][:8]})",
         ))
         if not yes:
-            replace = typer.confirm(tr_multi(
+            replace = confirm_action(tr_multi(
                 "Anstatauigi la ekzistantan?",
                 "Replace the existing entry?",
                 "Remplacer l'entree existante?",
@@ -247,7 +248,7 @@ def aldoni(
     # Preview before creation
     if not yes:
         _preview_entry(data)
-        confirmed = typer.confirm(tr_multi(
+        confirmed = confirm_action(tr_multi(
             "Cxu krei tiun eniron?",
             "Create this entry?",
             "Creer cette entree?",
