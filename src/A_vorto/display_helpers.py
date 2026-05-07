@@ -167,7 +167,7 @@ def _show_entry(
 
     # Build panel title
     title = Text()
-    title.append(str(entry.get("teksto", "") or ""), style="bold")
+    title.append(str(entry.get("teksto", "") or ""), style="bold white")
     title.append(f"  {entry['uuid'][:8]}", style="dim")
 
     # Build content lines
