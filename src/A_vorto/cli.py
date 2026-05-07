@@ -8,12 +8,17 @@ import typer
 from A import error, info, tr_multi
 from A.utils.output import console, print_table
 
-from A_vorto.service import get_service
 from A_vorto.display_helpers import _show_entry, _preview_entry
 from A_vorto.search_helpers import _run_search, _display_search_results
 from A_vorto.modify_helpers import _build_create_data, _build_update_data, _handle_create_result, _find_duplicate
 from A_vorto.manage_helpers import _handle_forigi, _handle_malfari, _handle_rubujo, _handle_restaurigi, _handle_senrubujigi
 from A_vorto.import_export_helpers import _handle_import, _handle_export
+
+
+def _get_service():
+    """Lazy-load service to avoid circular import during module init."""
+    from A_vorto.service import get_service as _gs
+    return _gs()
 
 
 def _display_results(entries: list[dict]) -> None:
@@ -64,7 +69,7 @@ def list(
     ),
 ) -> None:
     """List all word entries."""
-    service = get_service()
+    service = _get_service()
     entries = service.list(order_by=order_by, desc=desc, limit=limit)
 
     columns = [
@@ -132,7 +137,7 @@ def vidi(
         error(tr_multi("Use either UUID or --teksto, not both", "Use either UUID or --teksto, not both", "Utiliser UUID ou --teksto, pas les deux"))
         raise typer.Exit(1)
     
-    service = get_service()
+    service = _get_service()
     
     # Handle clipboard mutual exclusivity
     if kopii and semantika_kopii:
@@ -203,7 +208,7 @@ def aldoni(
     ),
 ) -> None:
     """Add a new word entry. Checks for duplicates and confirms before creating."""
-    service = get_service()
+    service = _get_service()
 
     # Build creation data
     data = _build_create_data(
@@ -287,7 +292,7 @@ def modifi(
     ligilo_remove: Optional[List[str]] = typer.Option(None, "--ligilo-remove", help=tr_multi("Remove link(s) by UUID", "Remove link(s) by UUID", "Retirer un/des lien(s) par UUID")),
 ) -> None:
     """Modify a word entry."""
-    service = get_service()
+    service = _get_service()
 
     existing = service.get(uuid)
     if not existing:
@@ -327,13 +332,13 @@ def modifi(
 
 @app.command("forigi")
 def forigi(
-    uuids: Annotated[list[str], typer.Argument(
+    uuids: list[str] = typer.Argument(
         ..., help=tr_multi(
             "UUID (or #UUID) of entries to delete (multiple)",
             "UUID (or #UUID) of entries to delete (multiple)",
             "UUID (ou #UUID) des entrees a supprimer (plusieurs)",
         )
-    )],
+    ),
     hard: bool = typer.Option(
         False,
         "--hard",
@@ -543,7 +548,7 @@ def serci(
 
     selected = _display_search_results(entries, uuid=uuid)
     if selected:
-        _show_entry(get_service(), selected)
+        _show_entry(_get_service(), selected)
 
 
 __all__ = ["app"]
