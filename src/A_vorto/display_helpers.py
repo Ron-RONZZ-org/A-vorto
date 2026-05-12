@@ -165,13 +165,24 @@ def _show_entry(
         if semantika_kopii:
             copy_to_clipboard(f"[{entry['teksto']}]({entry['uuid'][:8]})")
 
-    # Build panel title
+    # Build panel title (truncated to console width)
+    full_text = str(entry.get("teksto", "") or "")
+    max_title_w = console.width - 6  # room for borders + padding
+    if len(full_text) > max_title_w:
+        display_title = full_text[:max_title_w] + "…"
+    else:
+        display_title = full_text
     title = Text()
-    title.append(str(entry.get("teksto", "") or ""), style="bold white")
+    title.append(display_title, style="bold white")
     title.append(f"  {entry['uuid'][:8]}", style="dim")
 
     # Build content lines
     lines: list[str] = []
+
+    # Show full text as first content line if title was truncated
+    if len(full_text) > max_title_w:
+        lines.append(f"[bold]{full_text}[/]")
+        lines.append("")
 
     # Language and type info
     lang = entry.get("lingvo") or ""
