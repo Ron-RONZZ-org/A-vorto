@@ -207,7 +207,7 @@ PYTHONPATH=../A-core/src:src .venv/bin/python -m pytest tests/
 | `test_storage.py` | 5 | SQLite storage layer |
 | `test_utils.py` | 56 | Type maps, parsers, normalizers |
 
-**Total: 79 tests** (3 pre-existing FTS5 failures in test env)
+**Total: 89 tests** (7 pre-existing CLI test bugs — interactive prompts, exit codes)
 
 ## Documentation
 
