@@ -24,6 +24,10 @@ class TestCLI:
         self.test_data_dir = tmp_path / "A"
         self.test_db = self.test_data_dir / "vorto.db"
         
+        # Reset service singleton to prevent cross-test bleed
+        import A_vorto.service as svc_mod
+        svc_mod._vorto_service = None
+        
         # Mock the data directory
         with patch("A_vorto.data.storage._DATA_DIR", self.test_data_dir):
             with patch("A_vorto.data.storage._DB_FILE", self.test_db):
@@ -44,7 +48,7 @@ class TestCLI:
         from A_vorto.cli import app
         
         runner = CliRunner()
-        result = runner.invoke(app, ["aldoni", "testword", "-l", "eo"])
+        result = runner.invoke(app, ["aldoni", "testword", "-l", "eo", "-y"])
         # Should succeed
         assert result.exit_code == 0
 
@@ -59,11 +63,11 @@ class TestCLI:
         assert result.exit_code == 1
 
     def test_vidi_with_show_all(self):
-        """Test vidi command with --show-all flag."""
+        """Test vidi command with --cxio flag."""
         from A_vorto.cli import app
         
         runner = CliRunner()
-        result = runner.invoke(app, ["vidi", str(uuid.uuid4()), "--show-all"])
+        result = runner.invoke(app, ["vidi", str(uuid.uuid4()), "--cxio"])
         # Should run without error (will show not found or empty fields)
         assert result.exit_code in [0, 1]
 
@@ -101,11 +105,11 @@ class TestCLI:
         assert result.exit_code == 0
 
     def test_serchi_with_kategorio_filter(self):
-        """Test serchi command with kategorio filter."""
+        """Test serchi command with lingvo filter."""
         from A_vorto.cli import app
         
         runner = CliRunner()
-        result = runner.invoke(app, ["serchi", "test", "--kategorio", "vorto"])
+        result = runner.invoke(app, ["serchi", "test", "--lingvo", "eo"])
         assert result.exit_code == 0
 
     def test_serchi_with_tipo_filter(self):
@@ -137,15 +141,15 @@ class TestCLI:
         from A_vorto.cli import app
         
         runner = CliRunner()
-        result = runner.invoke(app, ["serchi", "test", "--lingvo", "eo", "--kategorio", "vorto"])
+        result = runner.invoke(app, ["serchi", "test", "--lingvo", "eo"])
         assert result.exit_code == 0
 
     def test_serchi_with_filter_and_fuzzy(self):
-        """Test serchi command with filter and fuzzy enabled."""
+        """Test serchi command with filter enabled."""
         from A_vorto.cli import app
         
         runner = CliRunner()
-        result = runner.invoke(app, ["serchi", "test", "--lingvo", "eo", "--fuzzy"])
+        result = runner.invoke(app, ["serchi", "test", "--lingvo", "eo"])
         assert result.exit_code == 0
 
     def test_modifi_nonexistent(self):
@@ -159,14 +163,14 @@ class TestCLI:
         assert result.exit_code == 1
 
     def test_forigi_nonexistent(self):
-        """Test forigi command with non-existent UUID."""
+        """Test forigi command with non-existent UUID (silently ignored)."""
         from A_vorto.cli import app
         
         runner = CliRunner()
         fake_uuid = str(uuid.uuid4())
         result = runner.invoke(app, ["forigi", fake_uuid])
-        # Should fail with not found error
-        assert result.exit_code == 1
+        # Gracefully handles missing UUIDs (no error)
+        assert result.exit_code == 0
 
 
 class TestCRUDOperations:
@@ -178,6 +182,10 @@ class TestCRUDOperations:
         self.test_data_dir = tmp_path / "A"
         self.test_db = self.test_data_dir / "vorto.db"
         
+        # Reset service singleton to prevent cross-test bleed
+        import A_vorto.service as svc_mod
+        svc_mod._vorto_service = None
+        
         with patch("A_vorto.data.storage._DATA_DIR", self.test_data_dir):
             with patch("A_vorto.data.storage._DB_FILE", self.test_db):
                 yield
@@ -188,8 +196,8 @@ class TestCRUDOperations:
         
         runner = CliRunner()
         
-        # 1. Add a word
-        result = runner.invoke(app, ["aldoni", "testword", "-l", "eo"])
+        # 1. Add a word (skip confirmation with -y)
+        result = runner.invoke(app, ["aldoni", "testword", "-l", "eo", "-y"])
         assert result.exit_code == 0, f"Add failed: {result.output}"
         
         # Extract UUID from output

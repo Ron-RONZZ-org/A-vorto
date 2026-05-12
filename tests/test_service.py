@@ -24,6 +24,10 @@ class TestGetService:
         """Set up test environment."""
         self.test_data_dir = tmp_path / "A"
         self.test_db = self.test_data_dir / "vorto.db"
+        
+        # Reset service singleton to prevent cross-test bleed
+        import A_vorto.service as svc_mod
+        svc_mod._vorto_service = None
 
         with patch("A_vorto.data.storage._DATA_DIR", self.test_data_dir):
             with patch("A_vorto.data.storage._DB_FILE", self.test_db):
@@ -56,6 +60,10 @@ class TestVortoServiceIntegration:
         """Set up test environment with test DB."""
         self.test_data_dir = tmp_path / "A"
         self.test_db = self.test_data_dir / "vorto.db"
+        
+        # Reset service singleton to prevent cross-test bleed
+        import A_vorto.service as svc_mod
+        svc_mod._vorto_service = None
 
         with patch("A_vorto.data.storage._DATA_DIR", self.test_data_dir):
             with patch("A_vorto.data.storage._DB_FILE", self.test_db):
@@ -152,6 +160,10 @@ class TestServiceFinds:
         """Set up test environment."""
         self.test_data_dir = tmp_path / "A"
         self.test_db = self.test_data_dir / "vorto.db"
+        
+        # Reset service singleton to prevent cross-test bleed
+        import A_vorto.service as svc_mod
+        svc_mod._vorto_service = None
 
         with patch("A_vorto.data.storage._DATA_DIR", self.test_data_dir):
             with patch("A_vorto.data.storage._DB_FILE", self.test_db):
