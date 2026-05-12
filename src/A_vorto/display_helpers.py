@@ -183,7 +183,7 @@ def _show_entry(
 
     # Build panel title (truncated to console width)
     full_text = str(entry.get("teksto", "") or "")
-    max_title_w = console.width - 6  # room for borders + padding
+    max_title_w = max(10, min(50, console.width - 30))  # room for UUID + borders
     if len(full_text) > max_title_w:
         display_title = full_text[:max_title_w] + "…"
     else:
