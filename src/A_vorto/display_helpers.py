@@ -138,6 +138,22 @@ def _resolve_cross_module(prefix: str, uuid: str, label: str = "") -> str:
     return label or f"{prefix}#{uuid[:8]}"
 
 
+def _try_cross_module_fallback(uuid: str) -> str | None:
+    """Try to resolve a bare UUID against known cross-module types.
+    
+    Args:
+        uuid: UUID to resolve (8+ hex chars).
+        
+    Returns:
+        Display string like "Title (ec#uuid)" if found, None otherwise.
+    """
+    for prefix in ("ec", "vt"):
+        resolved = resolve_ref(prefix, uuid)
+        if resolved and resolved.exists and resolved.title:
+            return f"{resolved.title} ({prefix}#{uuid[:8]})"
+    return None
+
+
 def _show_entry(
     service: Any,
     entry: dict[str, Any],
@@ -202,15 +218,21 @@ def _show_entry(
     elif type_info:
         lines.append(f"[bold]{type_info}[/]")
 
-    # Metadata rows
+    # Metadata rows (with inline ref resolution)
     if show_field("Autoro", entry.get("autoro")):
         lines.append(f"[dim]autoro:[/] {_format_value(entry.get('autoro'))}")
     if show_field("Verko", entry.get("verko")):
-        lines.append(f"[dim]verko:[/] {_format_value(entry.get('verko'))}")
+        verko_text = _resolve_inline_refs(
+            _format_value(entry.get("verko") or ""), service
+        )
+        lines.append(f"[dim]verko:[/] {verko_text}")
 
     if cxio:
         if show_field("Temo", entry.get("temo"), cxio):
-            lines.append(f"[dim]temo:[/] {_format_value(entry.get('temo'))}")
+            temo_text = _resolve_inline_refs(
+                _format_value(entry.get("temo") or ""), service
+            )
+            lines.append(f"[dim]temo:[/] {temo_text}")
         if show_field("Tono", entry.get("tono"), cxio):
             lines.append(f"[dim]tono:[/] {_format_value(entry.get('tono'))}")
         if show_field("Nivelo", entry.get("nivelo"), cxio):
@@ -282,7 +304,12 @@ def _show_entry(
                 if target:
                     link_texts.append(f"→ {target.get('teksto', '')} ({raw_ref[:8]})")
                 else:
-                    link_texts.append(f"  {raw_ref[:8]} (ne trovita)")
+                    # Fallback: try cross-module (ec#, vt#)
+                    cross = _try_cross_module_fallback(link_ref)
+                    if cross:
+                        link_texts.append(f"→ {cross}")
+                    else:
+                        link_texts.append(f"  {raw_ref[:8]} (ne trovita)")
         if link_texts:
             lines.append("\n".join(link_texts))
 

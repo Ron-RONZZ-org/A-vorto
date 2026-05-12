@@ -89,6 +89,8 @@ class VortoService:
             text_fields={
                 "difinoj": entry.get("difinoj") or [],
                 "uzoj": entry.get("uzoj") or [],
+                "verko": entry.get("verko") or "",
+                "temo": entry.get("temo") or "",
             },
             explicit_links=ligiloj if isinstance(ligiloj, list) else [],
         )
