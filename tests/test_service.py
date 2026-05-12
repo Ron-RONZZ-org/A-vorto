@@ -29,12 +29,13 @@ class TestGetService:
             with patch("A_vorto.data.storage._DB_FILE", self.test_db):
                 yield
 
-    def test_get_service_returns_crudservice(self):
-        """Test that get_service returns CRUDService instance."""
+    def test_get_service_wraps_crudservice(self):
+        """Test that get_service returns VortoService wrapping CRUDService."""
         from A_vorto.service import get_service
 
         service = get_service()
-        assert isinstance(service, CRUDService)
+        assert hasattr(service, "crud")
+        assert isinstance(service.crud, CRUDService)
 
     def test_get_service_singleton(self):
         """Test that get_service returns singleton."""
@@ -163,7 +164,7 @@ class TestServiceFinds:
         return get_service()
 
     def test_find_by_teksto(self, service):
-        """Test finding by teksto (word text) using search()."""
+        """Test finding by teksto (word text) via internal CRUDService."""
         data = {
             "teksto": "serchword",
             "lingvo": "eo",
@@ -171,14 +172,13 @@ class TestServiceFinds:
 
         service.create(data)
 
-        # Use search() method
-        entries = service.search("teksto", "serchword")
+        entries = service.crud.search("teksto", "serchword")
 
         assert len(entries) >= 1
         assert entries[0]["teksto"] == "serchword"
 
     def test_find_by_lingvo(self, service):
-        """Test finding by language using get_by_field()."""
+        """Test finding by language via internal CRUDService."""
         data = {
             "teksto": "germanword",
             "lingvo": "de",
@@ -186,9 +186,7 @@ class TestServiceFinds:
 
         service.create(data)
 
-        # Use get_by_field() to get by exact lingvo
-        entry = service.get_by_field("lingvo", "de")
-
+        entry = service.crud.get_by_field("lingvo", "de")
         assert entry is not None
         assert entry["lingvo"] == "de"
 
