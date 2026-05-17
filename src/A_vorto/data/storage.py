@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Optional
 
 from A import ensure_dirs as _ensure_dirs
-from A.data.base import SQLiteDB
+from A.data.base import SQLiteDB, backup_db, health_check
 from A.data.search import FTSConfig
 from A.utils.normalize import fold_search_text
 
@@ -56,8 +56,12 @@ def ensure_dirs() -> None:
 
 
 def get_db() -> SQLiteDB:
-    """Get database connection."""
+    """Get database connection with health check and backup."""
     ensure_dirs()
+    if not health_check(_DB_FILE):
+        from A.data.base import repair_db as _repair
+        _repair(_DB_FILE)
+    backup_db(_DB_FILE)
     db = SQLiteDB(_DB_FILE)
     db.execute(_CREATE_VORTO)
     db.execute(_CREATE_SCHEMA_VERSION)
