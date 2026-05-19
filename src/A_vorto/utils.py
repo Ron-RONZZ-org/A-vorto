@@ -176,8 +176,8 @@ def split_difino_uzo(raw: str) -> tuple[str, str]:
     """Split a combined definition+usage string into separate parts.
 
     Supported syntaxes:
-    - ``difino:{uzo}`` (preferred)
-    - ``difino::uzo`` (shell-safe, avoids ``!*`` history expansion)
+    - ``difino::uzo`` (preferred — shell-safe, same keystrokes as ``:{...}``)
+    - ``difino:{uzo}`` (colon-braced — also valid)
     - ``difino:*uzo*`` (legacy)
 
     Args:

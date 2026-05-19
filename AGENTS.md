@@ -180,7 +180,7 @@ A-vorto integrates the following A-core features:
 |---------|-----|----------------|
 | Type normalization | `--tipo su,aj` | `utils.normalize_tipo()` maps abbreviations via TIPO_MAP |
 | Tonality normalization | `--tono nf` | `utils.normalize_tono()` maps via TONO_MAP |
-| Difinoj+Uzoj input | `--difino "def:{eg}"` | `utils.split_difino_uzo()` (3 syntax variants) |
+| Difinoj+Uzoj input | `--difino "def::eg"` | `utils.split_difino_uzo()` (3 syntax variants) |
 | Etikedoj (tags) | `--etikedo key:val` | `utils.parse_etikedoj()` |
 | Kategorio auto-detect | automatic on `aldoni` | `utils.detect_kategorio()` (vorto/frazo/frazdaro) |
 | Multiline text normalization | automatic | `utils.normalize_multiline_text()` |
