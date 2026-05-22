@@ -408,7 +408,7 @@ def _preview_entry(data: dict[str, Any]) -> None:
             elif isinstance(value, (int, float)):
                 lines.append(f"  [dim]{label}:[/]  {value}")
 
-    # Helper: format a list field
+    # Helper: format a list field (shows full content, no truncation)
     def add_list_field(label: str, values: list) -> None:
         if not values:
             return
@@ -416,9 +416,7 @@ def _preview_entry(data: dict[str, Any]) -> None:
         lines.append(f"  [bold]{label}:[/]")
         for i, v in enumerate(values, 1):
             if isinstance(v, str):
-                # Truncate long lines for preview
-                display = v[:120] + "..." if len(v) > 120 else v
-                lines.append(f"    {i}. {display}")
+                lines.append(f"    {i}. {v}")
 
     # Helper: format a tags dict
     def add_tags_field(label: str, tags: Any) -> None:
@@ -472,8 +470,7 @@ def _preview_entry(data: dict[str, Any]) -> None:
         lines.append(f"")
         lines.append(f"  [bold]difinoj:[/]")
         for i, d in enumerate(difinoj, 1):
-            display = d[:120] + "..." if len(d) > 120 else d
-            lines.append(f"    {i}. {display}")
+            lines.append(f"    {i}. {d}")
 
     # --- Uzoj ---
     uzoj = data.get("uzoj", [])
@@ -486,8 +483,7 @@ def _preview_entry(data: dict[str, Any]) -> None:
         lines.append(f"")
         lines.append(f"  [bold]uzoj:[/]")
         for i, u in enumerate(uzoj, 1):
-            display = u[:120] + "..." if len(u) > 120 else u
-            lines.append(f"    {i}. {display}")
+            lines.append(f"    {i}. {u}")
 
     # --- Etikedoj (tags) ---
     add_tags_field("etikedoj", data.get("etikedoj"))

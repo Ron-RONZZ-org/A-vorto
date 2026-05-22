@@ -162,8 +162,27 @@ def vidi(
         lookup_uid = uid[1:] if uid and uid.startswith("#") else uid
         entry = service.get(lookup_uid)
         if not entry:
-            error(tr_multi(f"Vorto {uid} ne trovitas", f"Word {uid} not found", f"Mot {uid} non trouve"))
-            raise typer.Exit(1)
+            # Check if input looks like a UUID (all hex, 6+ chars) — genuine not-found
+            import re
+            if re.match(r'^[0-9a-fA-F]{6,}$', lookup_uid):
+                error(tr_multi(f"Vorto {uid} ne trovitas", f"Word {uid} not found", f"Mot {uid} non trouve"))
+                raise typer.Exit(1)
+            # Not UUID-like — fall back to text search (matching autish-legacy vidi behavior)
+            if kopii or semantika_kopii:
+                error(tr_multi(
+                    "--kopii/--semantika-kopii requires a UUID argument",
+                    "--kopii/--semantika-kopii requires a UUID argument",
+                    "--kopii/--semantika-kopii necessite un argument UUID",
+                ))
+                raise typer.Exit(1)
+            entries = _run_search(teksto=lookup_uid)
+            selected = _display_search_results(entries)
+            if not selected:
+                raise typer.Exit(1)
+            entry = selected
+            # Disable clipboard for search fallback
+            kopii = False
+            semantika_kopii = False
     
     # Display entry using Rich Panel
     _show_entry(service, entry, cxio=cxio, ref=ref, html=html, kopii=kopii, semantika_kopii=semantika_kopii)
