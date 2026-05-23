@@ -5,6 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Optional
 
+from A.core.paths import data_dir
 from A import ensure_dirs as _ensure_dirs
 from A.data.base import SQLiteDB, backup_db, health_check
 from A.data.search import FTSConfig
@@ -12,7 +13,7 @@ from A.utils.normalize import fold_search_text
 
 from A_vorto.data.migrate import migrate
 
-_DATA_DIR: Path = Path.home() / ".local" / "share" / "A"
+_DATA_DIR: Path = data_dir()
 _DB_FILE: Path = _DATA_DIR / "vorto.db"
 
 _CREATE_VORTO = """
