@@ -80,6 +80,22 @@ If you need a utility that should be in A-core:
 
 ## Architecture
 
+This module follows the standard A-module pattern:
+
+```
+src/A_vorto/
+├── __init__.py           # exports: app
+├── cli.py                # Typer app (~568 lines, mostly boilerplate)
+├── service.py            # VortoService (CRUD + FTS5 + deduplication)
+├── display_helpers.py    # Display formatting facade (~251 lines)
+├── _display_references.py# Inline reference resolution (~143 lines)
+├── _display_preview.py   # Preview building (~114 lines)
+├── _entry_format.py      # Entry formatting (affix display, definition formatting)
+├── _entry_ops.py         # Entry operations (modify, merge, mark favorite)
+├── audado.py             # Text-to-speech (subprocess via A.utils.run)
+└── data/
+    ├── __init__.py
+    └── storage.py        # SQLite (get_db, schema, FTS config)
 ```
 src/A_vorto/
 ├── __init__.py           # Plugin exports
