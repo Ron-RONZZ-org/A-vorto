@@ -28,6 +28,9 @@ vorto = "A_vorto.cli:app"
 [project.entry-points."A.migrations"]
 A-vorto = "A_vorto.data.migration_register:register"
 
+[project.entry-points."A.backup"]
+vorto = "A_vorto.data.storage:get_backup_targets"
+
 [tool.hatch.build.targets.wheel]
 packages = ["src/A_vorto"]
 

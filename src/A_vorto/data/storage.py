@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Optional
 
 from A.core.paths import data_dir
+from A.core.backup_targets import BackupTarget
 from A import ensure_dirs as _ensure_dirs
 from A.data.base import SQLiteDB, backup_db, health_check
 from A.data.search import FTSConfig
@@ -82,4 +83,16 @@ VORTO_FTS_CONFIG = FTSConfig(
 )
 
 
-__all__ = ["ensure_dirs", "get_db", "VORTO_FTS_CONFIG"]
+def get_backup_targets() -> list[BackupTarget]:
+    """Return backup targets for A-vorto."""
+    return [
+        BackupTarget(
+            path=_DB_FILE,
+            category="data",
+            module="vorto",
+            label="Vorto database",
+        ),
+    ]
+
+
+__all__ = ["ensure_dirs", "get_db", "VORTO_FTS_CONFIG", "get_backup_targets"]
