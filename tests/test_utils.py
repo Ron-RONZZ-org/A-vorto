@@ -301,6 +301,38 @@ class TestSplitDifinoUzo:
         assert d == ""
         assert u == ""
 
+    # ── Single colon with surrounding spaces ( : ) ────────────────────────
+
+    def test_single_colon_with_spaces(self):
+        """Space-colon-space splits correctly."""
+        d, u = split_difino_uzo("def : uzo")
+        assert d == "def"
+        assert u == "uzo"
+
+    def test_single_colon_no_leading_space(self):
+        """Colon with space only after does NOT split."""
+        d, u = split_difino_uzo("def: uzo")
+        assert d == "def: uzo"
+        assert u == ""
+
+    def test_single_colon_multiword(self):
+        """Multi-word natural language example with space-colon-space."""
+        d, u = split_difino_uzo("aspect general : une ruine d'allure")
+        assert d == "aspect general"
+        assert u == "une ruine d'allure"
+
+    def test_single_colon_trailing_only(self):
+        """Nothing after colon: normalize strips trailing space, no split."""
+        d, u = split_difino_uzo("def : ")
+        assert d == "def :"
+        assert u == ""
+
+    def test_double_colon_still_takes_priority(self):
+        """Explicit :: takes priority when both :: and  :  are present."""
+        d, u = split_difino_uzo("def : uzo :: extra")
+        assert d == "def : uzo"
+        assert u == "extra"
+
 
 # ──────────────────────────────────────────────────────────────────────────────
 # detect_kategorio
