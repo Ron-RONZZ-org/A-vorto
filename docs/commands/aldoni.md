@@ -23,7 +23,7 @@ A vorto aldoni <TEKSTO> [OPTIONS]
 | `--tipo` | | Type abbreviation(s), comma/semicolon-separated |
 | `--temo` | | Theme |
 | `--tono` | | Tonality (nf=informal, fo=formal, am=ambos) |
-| `--difino` | | Definition (can include usage: `difino:{uzo}`) |
+| `--difino` | `-d` | Definition (can include usage: `difino:{uzo}`, `difino : uzo`, or `difino::uzo`) |
 | `--uzo` | | Usage example (standalone) |
 | `--etikedo` | | Tag in key:value format |
 | `--autoro` | | Author |
@@ -57,8 +57,11 @@ A vorto aldoni "hello" --lingvo en --difino "saluton"
 # With type and category
 A vorto aldoni "hello" --tipo su --kategorio vorto
 
-# With definition and usage
-A vorto aldoni "hello" --difino "saluton:persona saluto" --uzo "hello world"
+# With definition and usage (explicit :: separator)
+A vorto aldoni "hello" --difino "saluton::persona saluto"
+
+# With definition and usage (natural : separator)
+A vorto aldoni "hello" --difino "saluton : persona saluto"
 
 # With tags
 A vorto aldoni "hello" --etikedo source:book --etikedo难度:中
