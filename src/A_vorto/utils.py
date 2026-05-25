@@ -177,6 +177,7 @@ def split_difino_uzo(raw: str) -> tuple[str, str]:
 
     Supported syntaxes:
     - ``difino::uzo`` (preferred — shell-safe, same keystrokes as ``:{...}``)
+    - ``difino : uzo`` (natural language — space-colon-space)
     - ``difino:{uzo}`` (colon-braced — also valid)
     - ``difino:*uzo*`` (legacy)
 
@@ -190,6 +191,10 @@ def split_difino_uzo(raw: str) -> tuple[str, str]:
     # Shell-safe: difino::uzo
     if "::" in text:
         left, right = text.split("::", 1)
+        return left.strip(), right.strip()
+    # Natural language: difino : uzo  (space-colon-space)
+    if " : " in text:
+        left, right = text.split(" : ", 1)
         return left.strip(), right.strip()
     # Preferred: difino:{uzo}
     m_braced = re.match(r"^(.*?):\{(.+)\}$", text)
