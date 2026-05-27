@@ -20,18 +20,9 @@ class TestGetService:
     """Tests for get_service function."""
 
     @pytest.fixture(autouse=True)
-    def setup_env(self, tmp_path):
-        """Set up test environment."""
-        self.test_data_dir = tmp_path / "A"
-        self.test_db = self.test_data_dir / "vorto.db"
-        
-        # Reset service singleton to prevent cross-test bleed
-        import A_vorto.service as svc_mod
-        svc_mod._vorto_service = None
-
-        with patch("A_vorto.data.storage._DATA_DIR", self.test_data_dir):
-            with patch("A_vorto.data.storage._DB_FILE", self.test_db):
-                yield
+    def setup_env(self):
+        """Set up test environment (isolation handled by conftest)."""
+        yield
 
     def test_get_service_wraps_crudservice(self):
         """Test that get_service returns VortoService wrapping CRUDService."""
@@ -56,18 +47,9 @@ class TestVortoServiceIntegration:
     """Integration tests for vorto CRUDService (requires DB)."""
 
     @pytest.fixture(autouse=True)
-    def setup_env(self, tmp_path):
-        """Set up test environment with test DB."""
-        self.test_data_dir = tmp_path / "A"
-        self.test_db = self.test_data_dir / "vorto.db"
-        
-        # Reset service singleton to prevent cross-test bleed
-        import A_vorto.service as svc_mod
-        svc_mod._vorto_service = None
-
-        with patch("A_vorto.data.storage._DATA_DIR", self.test_data_dir):
-            with patch("A_vorto.data.storage._DB_FILE", self.test_db):
-                yield
+    def setup_env(self):
+        """Set up test environment (isolation handled by conftest)."""
+        yield
 
     @pytest.fixture
     def service(self):
@@ -156,18 +138,9 @@ class TestServiceFinds:
     """Test service find methods."""
 
     @pytest.fixture(autouse=True)
-    def setup_env(self, tmp_path):
-        """Set up test environment."""
-        self.test_data_dir = tmp_path / "A"
-        self.test_db = self.test_data_dir / "vorto.db"
-        
-        # Reset service singleton to prevent cross-test bleed
-        import A_vorto.service as svc_mod
-        svc_mod._vorto_service = None
-
-        with patch("A_vorto.data.storage._DATA_DIR", self.test_data_dir):
-            with patch("A_vorto.data.storage._DB_FILE", self.test_db):
-                yield
+    def setup_env(self):
+        """Set up test environment (isolation handled by conftest)."""
+        yield
 
     @pytest.fixture
     def service(self):

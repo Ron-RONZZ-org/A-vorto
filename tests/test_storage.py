@@ -119,9 +119,10 @@ class TestGetDbSingleton:
             db1 = storage_module.get_db()
             db2 = storage_module.get_db()
 
-        # Note: get_db creates new instance each time (unlike service singleton)
-        # This is intentional - each call gets fresh connection from pool
-        assert db1 is not db2
+        # get_db now caches the instance (singleton pattern)
+        # Same as service singleton — prevents "database is locked" from
+        # multiple connections to the same DB file.
+        assert db1 is db2
 
 
 if __name__ == "__main__":

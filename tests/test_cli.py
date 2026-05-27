@@ -5,7 +5,7 @@ import sys
 import tempfile
 import uuid
 from pathlib import Path
-from unittest.mock import patch, MagicMock
+
 
 import pytest
 from typer.testing import CliRunner
@@ -19,19 +19,9 @@ class TestCLI:
     """Test CLI commands."""
 
     @pytest.fixture(autouse=True)
-    def setup_env(self, tmp_path):
-        """Set up test environment."""
-        self.test_data_dir = tmp_path / "A"
-        self.test_db = self.test_data_dir / "vorto.db"
-        
-        # Reset service singleton to prevent cross-test bleed
-        import A_vorto.service as svc_mod
-        svc_mod._vorto_service = None
-        
-        # Mock the data directory
-        with patch("A_vorto.data.storage._DATA_DIR", self.test_data_dir):
-            with patch("A_vorto.data.storage._DB_FILE", self.test_db):
-                yield
+    def setup_env(self):
+        """Set up test environment (isolation handled by conftest)."""
+        yield
 
     def test_list_empty(self):
         """Test list command with no entries."""
@@ -177,18 +167,9 @@ class TestCRUDOperations:
     """Test CRUD operations through CLI."""
 
     @pytest.fixture(autouse=True)
-    def setup_env(self, tmp_path):
-        """Set up test environment with mock database."""
-        self.test_data_dir = tmp_path / "A"
-        self.test_db = self.test_data_dir / "vorto.db"
-        
-        # Reset service singleton to prevent cross-test bleed
-        import A_vorto.service as svc_mod
-        svc_mod._vorto_service = None
-        
-        with patch("A_vorto.data.storage._DATA_DIR", self.test_data_dir):
-            with patch("A_vorto.data.storage._DB_FILE", self.test_db):
-                yield
+    def setup_env(self):
+        """Set up test environment (isolation handled by conftest)."""
+        yield
 
     def test_full_crud_cycle(self):
         """Test: add -> list -> view -> search -> modify -> delete."""
