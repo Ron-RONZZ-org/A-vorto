@@ -8,8 +8,8 @@ from typing import Any
 from rich.panel import Panel
 from rich.text import Text
 
-from A import tr_multi, copy_to_clipboard
-from A.utils.output import console
+from A import info, tr_multi, copy_to_clipboard
+from A.utils.output import console, print_table
 from A.core.references import resolve as resolve_ref
 
 from A_vorto._display_references import (
@@ -238,7 +238,22 @@ def _show_entry(
         preview_markdown(entry["teksto"], title=entry["teksto"])
 
 
+def _display_results(entries: list[dict]) -> None:
+    """Display search results in table format."""
+    if not entries:
+        info(tr_multi("Neniuj rezultoj", "No results", "Aucun resultat"))
+        return
+
+    columns = [
+        {"header": "UUID", "key": "uuid", "style": "dim", "width": 8},
+        {"header": "Teksto", "key": "teksto"},
+        {"header": "Lingvo", "key": "lingvo"},
+    ]
+    print_table(columns, entries)
+
+
 __all__ = [
+    "_display_results",
     "show_field",
     "_format_value",
     "_show_entry",
