@@ -100,8 +100,10 @@ src/A_vorto/
 ├── import_export_helpers.py  # Import/export via A-core utilities
 ├── utils.py             # Type maps, parsers, normalizers
 └── data/
+    ├── __init__.py
     ├── storage.py       # SQLite (uses A.data.base + FTSConfig)
     ├── migrate.py       # Schema migrations
+    ├── migration_register.py  # Migration registry
     └── migrate_from_autish.py  # Legacy data migration
 
 - Full-text search on `teksto` field
@@ -158,14 +160,6 @@ All A-ecosystem development **must** use `uv` as the package manager:
 - Don't use `print()` — use `A` output functions
 - Don't hardcode paths — use `A.core.paths`
 - Don't implement utilities that should be in core
-
-## Testing
-
-```bash
-cd A-vorto
-uv venv .venv && uv pip install pytest pytest-mock typer rich --python .venv/bin/python
-PYTHONPATH=../A-core/src:src .venv/bin/python -m pytest tests/
-```
 
 ## Features
 

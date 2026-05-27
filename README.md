@@ -74,7 +74,7 @@ uv venv .venv && uv pip install pytest pytest-mock typer rich --python .venv/bin
 PYTHONPATH=../A-core/src:src .venv/bin/python -m pytest tests/
 ```
 
-**23 tests passing** (test_cli.py, test_service.py, test_storage.py)
+**94 tests passing** (test_cli.py, test_service.py, test_storage.py, test_utils.py)
 
 ## Documentation
 
