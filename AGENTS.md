@@ -84,24 +84,16 @@ This module follows the standard A-module pattern:
 
 ```
 src/A_vorto/
-├── __init__.py           # exports: app
-├── cli.py                # Typer app (~568 lines, mostly boilerplate)
-├── service.py            # VortoService (CRUD + FTS5 + deduplication)
-├── display_helpers.py    # Display formatting facade (~251 lines)
-├── _display_references.py# Inline reference resolution (~143 lines)
-├── _display_preview.py   # Preview building (~114 lines)
-├── _entry_format.py      # Entry formatting (affix display, definition formatting)
-├── _entry_ops.py         # Entry operations (modify, merge, mark favorite)
-├── audado.py             # Text-to-speech (subprocess via A.utils.run)
-└── data/
-    ├── __init__.py
-    └── storage.py        # SQLite (get_db, schema, FTS config)
-```
-src/A_vorto/
 ├── __init__.py           # Plugin exports
-├── cli.py               # Typer app (commands: vidi, aldoni, modifi, serci, list, etc.)
+├── cli.py               # Typer app (~216 lines) — app, thin commands, registrations
+├── vidi_cmd.py          # vidi command (~204 lines) — view/list entries
+├── aldoni_cmd.py        # aldoni command (~228 lines) — create with duplicate check
+├── modifi_cmd.py        # modifi command (~234 lines) — update with clear-* flags
+├── serci_cmd.py         # serci/serchi command (~199 lines) — filtered search
 ├── service.py           # CRUDService with FTS5, links, and references
-├── display_helpers.py   # Rich Panel display for vidi (Markdown, metadata, links)
+├── display_helpers.py   # Rich Panel display + _display_results (~266 lines)
+├── _display_references.py  # Inline reference resolution (~143 lines)
+├── _display_preview.py  # Preview building (~114 lines)
 ├── search_helpers.py    # Interactive search via select_candidate()
 ├── modify_helpers.py    # Data builders for aldoni/modifi
 ├── manage_helpers.py    # Business logic for forigi, malfari, rubujo, etc.
@@ -218,12 +210,12 @@ PYTHONPATH=../A-core/src:src .venv/bin/python -m pytest tests/
 
 | Module | Tests | Description |
 |--------|-------|-------------|
-| `test_cli.py` | 7+ | CLI commands via CliRunner |
+| `test_cli.py` | 17 | CLI commands via CliRunner + full CRUD cycle |
 | `test_service.py` | 9 | CRUDService operations |
-| `test_storage.py` | 5 | SQLite storage layer |
-| `test_utils.py` | 56 | Type maps, parsers, normalizers |
+| `test_storage.py` | 5 | SQLite storage layer (get_db singleton) |
+| `test_utils.py` | 63 | Type maps, parsers, normalizers, split_difino_uzo |
 
-**Total: 89 tests — all passing**
+**Total: 94 tests — all passing**
 
 ## Documentation
 
