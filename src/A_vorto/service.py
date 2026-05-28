@@ -24,21 +24,37 @@ JSON_COLUMNS = ("difinoj", "uzoj", "etikedoj", "ligiloj")
 
 class VortoService:
     """Vorto service wrapping CRUDService with link sync and references support.
-    
+
+    The ``CRUDService`` (and thus the database connection) is created
+    lazily on first access so that module-level ``get_service()`` does
+    **not** connect to the real database at import time.  Tests that
+    redirect ``A_DIR`` or reset singletons can safely import the module
+    without side effects.
+
     Dual-role architecture:
     - ligiloj JSON column: source of truth for "what does this entry link to"
     - A.core.links: query index for O(1) bidirectional lookups
     """
 
     def __init__(self):
-        self.crud = CRUDService(
-            get_db(),
-            "vorto",
-            fts_config=VORTO_FTS_CONFIG,
-            undo_size=10,
-        )
+        self._crud = None
+        self._migrated = False
+
+    @property
+    def crud(self):
+        """Lazy CRUDService — database connection on first access."""
+        if self._crud is None:
+            self._crud = CRUDService(
+                get_db(),
+                "vorto",
+                fts_config=VORTO_FTS_CONFIG,
+                undo_size=10,
+            )
         # Run migration once
-        self._migrate_links()
+        if not self._migrated:
+            self._migrate_links()
+            self._migrated = True
+        return self._crud
 
     def _migrate_links(self) -> None:
         """One-time migration: sync existing ligiloj JSON to A.core.links."""
