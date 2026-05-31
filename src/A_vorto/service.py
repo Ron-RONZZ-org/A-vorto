@@ -231,20 +231,21 @@ class VortoService:
 
     def get_references(self, entry: dict) -> list:
         """Get cross-references from text fields (difinoj, uzoj).
-        
+
         Parses vt#uuid and ec#uuid references in entry text fields
         and resolves them to entry data.
-        
+
         Returns:
             list of ResolvedRef objects
         """
-        from A.core.references import get_refs_in_field
+        from A.core.references import parse_refs
+
         refs = []
         for field in ("difinoj", "uzoj"):
             field_val = entry.get(field) or []
             if isinstance(field_val, list):
                 for item in field_val:
-                    refs.extend(get_refs_in_field(item or ""))
+                    refs.extend(parse_refs(item or ""))
         return refs
 
     def find_by_text_prefix(self, text: str) -> dict | None:
