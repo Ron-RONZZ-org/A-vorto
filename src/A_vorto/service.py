@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from A import serialize_json_columns
+from A import info, serialize_json_columns, tr_multi
 from A.core.service import CRUDService
 from A.core.links import add_link, remove_link, get_outgoing, get_incoming, remove_all_for_entry
 from A.core.references import get_refs_in_field, resolve as resolve_ref
@@ -235,14 +235,30 @@ class VortoService:
                     refs.extend(get_refs_in_field(item or ""))
         return refs
 
+    def find_by_teksto_exact(self, text: str) -> dict | None:
+        """Find entry by exact case-insensitive teksto match.
+
+        Args:
+            text: The exact text to match (case-insensitive).
+
+        Returns:
+            Matching entry dict or None.
+        """
+        db = get_db()
+        row = db.execute_one(
+            "SELECT * FROM vorto WHERE LOWER(teksto) = ? AND forigita_je IS NULL",
+            (text.lower(),),
+        )
+        return dict(row) if row else None
+
     def find_by_text_prefix(self, text: str) -> dict | None:
         """Find entry by text prefix (case-insensitive).
-        
+
         Args:
-            text: Text to search for (prefix match, case-insensitive)
-            
+            text: Text to search for (prefix match, case-insensitive).
+
         Returns:
-            First matching entry or None
+            First matching entry or None.
         """
         # Use SQLite LIKE for prefix match
         db = get_db()
@@ -251,6 +267,177 @@ class VortoService:
             (f"{text.lower()}%",),
         )
         return dict(row) if row else None
+
+    def resolve_ligilo_refs(self, raw_refs: list[str]) -> list[str]:
+        """Resolve a list of raw ligilo references to canonical UUIDs.
+
+        Accepts:
+        - Plain UUIDs (passed through)
+        - ``#``-prefixed UUIDs (``#uuid``: stripped, resolved)
+        - ``vt#``-prefixed refs (``vt#uuid``: stripped, resolved)
+        - ``ec#``-prefixed refs (``ec#ref``: resolved via A-encik if available,
+          stored as-is otherwise)
+        - Plain text: case-insensitive exact ``teksto`` lookup
+
+        Unresolvable refs produce a non-fatal warning and are skipped.
+
+        Args:
+            raw_refs: List of raw reference strings from CLI input.
+
+        Returns:
+            List of resolved canonical UUID/ref strings.
+        """
+        resolved: list[str] = []
+        for ref in raw_refs:
+            canonical = self._resolve_single_ligilo_ref(ref)
+            if canonical:
+                resolved.append(canonical)
+        return resolved
+
+    def _resolve_single_ligilo_ref(self, raw: str) -> str | None:
+        """Resolve a single ligilo reference to a canonical form.
+
+        Args:
+            raw: A single raw reference string.
+
+        Returns:
+            Canonical UUID/ref string, or None if unresolvable.
+        """
+        ref = raw.strip()
+        if not ref:
+            return None
+
+        # ec# prefix — try A-encik resolution, store as-is if unavailable
+        if ref.lower().startswith("ec#"):
+            return self._resolve_ec_ref(ref)
+
+        # vt# prefix — strip and resolve as UUID/text
+        if ref.lower().startswith("vt#"):
+            inner = ref[3:].strip()
+            if not inner:
+                info(
+                    tr_multi(
+                        f"Aldono: malplena ligilo '{raw}' — preterlasita",
+                        f"Note: empty link '{raw}' — skipped",
+                        f"Note: lien vide '{raw}' — ignore",
+                    )
+                )
+                return None
+            resolved = self._resolve_single_ligilo_ref("#" + inner)
+            if resolved:
+                return resolved
+            return None
+
+        # # prefix — resolve as UUID
+        if ref.startswith("#"):
+            resolved_uuid = self._resolve_uuid(ref)
+            if not resolved_uuid:
+                info(
+                    tr_multi(
+                        f"Aldono: ligilo '{raw}' ne estas valida UUID — preterlasita",
+                        f"Note: link '{raw}' is not a valid UUID — skipped",
+                        f"Note: lien '{raw}' n'est pas un UUID valide — ignore",
+                    )
+                )
+            return resolved_uuid
+
+        # Try UUID resolution first (exact + prefix match)
+        resolved_uuid = self._resolve_uuid(ref)
+        if resolved_uuid:
+            return resolved_uuid
+
+        # Try case-insensitive exact text match
+        entry = self.find_by_teksto_exact(ref)
+        if entry:
+            return entry["uuid"]
+
+        # Multiple text matches?
+        db = get_db()
+        rows = db.execute(
+            "SELECT uuid, teksto FROM vorto WHERE LOWER(teksto) = ? AND forigita_je IS NULL",
+            (ref.lower(),),
+        )
+        matches = list(rows)
+        if len(matches) > 1:
+            info(
+                tr_multi(
+                    f"Aldono: pluraj eniroj kongruas kun '{ref}' — uzu UUID anstataŭe",
+                    f"Note: multiple entries match '{ref}' — use UUID instead",
+                    f"Note: plusieurs entrees correspondent a '{ref}' — utilisez UUID",
+                )
+            )
+            return None
+
+        # Not found
+        info(
+            tr_multi(
+                f"Aldono: ligilo '{ref}' ne konformas al iu ajn vorto — preterlasita",
+                f"Note: link '{ref}' does not match any entry — skipped",
+                f"Note: lien '{ref}' ne correspond a aucune entree — ignore",
+            )
+        )
+        return None
+
+    def _resolve_ec_ref(self, ref: str) -> str | None:
+        """Resolve an ``ec#`` reference, returning ``ec#{uuid}`` or raw as-is.
+
+        If A-encik is installed and the ref resolves, returns the canonical
+        form. Otherwise returns the raw ``ec#`` string unchanged.
+
+        Args:
+            ref: The full ``ec#...`` reference string.
+
+        Returns:
+            Canonical ``ec#{uuid}`` or the original raw ref if unresolvable.
+        """
+        inner = ref[3:].strip()
+        if not inner:
+            return ref
+        try:
+            import A_encik  # noqa: F401
+        except ImportError:
+            return ref  # A-encik not installed — store as-is
+        try:
+            from A_encik import get_service as get_encik_service
+            encik_svc = get_encik_service()
+            entry = encik_svc.get(inner)
+            if entry:
+                return f"ec#{entry['uuid']}"
+        except Exception:
+            pass
+        return ref  # Unresolvable — store as-is
+
+    def create(self, data: dict) -> dict:
+        """Create entry and sync links.
+
+        Resolves ligilo refs (text → UUID, ``#`` prefix, ``ec#``, etc.)
+        before persisting.
+        """
+        # Resolve ligilo references before persisting
+        if "ligiloj" in data and data["ligiloj"]:
+            data["ligiloj"] = self.resolve_ligilo_refs(list(data["ligiloj"]))
+        # Serialize JSON columns before passing to CRUDService
+        serialized = serialize_json_columns(data, JSON_COLUMNS)
+        entry = self.crud.create(serialized)
+        self._sync_links(entry)
+        return entry
+
+    def update(self, uuid: str, data: dict) -> dict:
+        """Update entry and sync links.
+
+        Resolves short or ``#``-prefixed UUIDs to full UUID first.
+        Also resolves ligilo refs in the update data.
+        """
+        resolved = self._resolve_uuid(uuid)
+        if not resolved:
+            raise ValueError(f"Entry not found: {uuid}")
+        # Resolve ligilo references if present
+        if "ligiloj" in data and data["ligiloj"]:
+            data["ligiloj"] = self.resolve_ligilo_refs(list(data["ligiloj"]))
+        serialized = serialize_json_columns(data, JSON_COLUMNS)
+        entry = self.crud.update(resolved, serialized)
+        self._sync_links(entry)
+        return entry
 
 
 def get_service() -> VortoService:
