@@ -103,7 +103,11 @@ def aldoni(
         None,
         "-L",
         "--ligilo",
-        help=tr_multi("Link to UUID(s)", "Link to UUID(s)", "Lier a UUID(s)"),
+        help=tr_multi(
+            "Link to UUID(s), #UUID, ec#ref, vt#ref, or text (e.g. -L saluton)",
+            "Link to UUID(s), #UUID, ec#ref, vt#ref, or text (e.g. -L saluton)",
+            "Lier a UUID(s), #UUID, ec#ref, vt#ref, ou texte (ex. -L saluton)",
+        ),
     ),
     autoro: Optional[str] = typer.Option(
         None,
