@@ -187,10 +187,12 @@ A-vorto integrates the following A-core features:
 | Kategorio auto-detect | automatic on `aldoni` | `utils.detect_kategorio()` (vorto/frazo/frazdaro) |
 | Multiline text normalization | automatic | `utils.normalize_multiline_text()` |
 | Clear-* flags on `modifi` | `--clear-difinoj` etc. | Explicit reset of JSON arrays/null fields |
+| Ligilo text resolution | `-L` on `aldoni`/`modifi` | `VortoService.resolve_ligilo_refs()` resolves text, `#uuid`, `vt#`, `ec#` to UUIDs |
 
-Implemented (A-core #18, #19):
-- Bidirectional links via `--ligilo` on `aldoni`/`modifi` and `--ref` on `vidi`
+Implemented:
+- Bidirectional links via `--ligilo` on `aldoni`/`modifi` and `--ref` on `vidi` (A-core #18, #19)
 - Cross-references `vt#uuid` parsed from text fields (difinoj, uzoj)
+- Ligilo text resolution: `-L` accepts plain text, `#uuid`, `vt#uuid`, `ec#ref` — resolves to canonical UUID (#41)
 
 ## Testing
 
@@ -205,11 +207,11 @@ PYTHONPATH=../A-core/src:src .venv/bin/python -m pytest tests/
 | Module | Tests | Description |
 |--------|-------|-------------|
 | `test_cli.py` | 17 | CLI commands via CliRunner + full CRUD cycle |
-| `test_service.py` | 9 | CRUDService operations |
+| `test_service.py` | 20 | CRUDService operations + ligilo ref resolution (11) |
 | `test_storage.py` | 5 | SQLite storage layer (get_db singleton) |
 | `test_utils.py` | 63 | Type maps, parsers, normalizers, split_difino_uzo |
 
-**Total: 94 tests — all passing**
+**Total: 105 tests — all passing**
 
 ## Documentation
 
