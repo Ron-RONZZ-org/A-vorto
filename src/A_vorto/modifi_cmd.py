@@ -218,7 +218,7 @@ def modifi(
     if not data:
         error(
             tr_multi(
-                "Neniuj sxangoj",
+                "Neniuj ŝanĝoj",
                 "No changes",
                 "Aucun changement",
             )
