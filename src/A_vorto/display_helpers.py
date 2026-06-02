@@ -234,8 +234,10 @@ def _show_entry(
 
     if html and entry.get("teksto"):
         from A.core.markdown_html_view import preview_markdown
+        import webbrowser
 
-        preview_markdown(entry["teksto"], title=entry["teksto"])
+        path = preview_markdown(entry["teksto"], title=entry["teksto"])
+        webbrowser.open(str(path))
 
 
 def _display_results(entries: list[dict]) -> None:
