@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Optional
 
-from A import error, info, tr_multi
+from A import error, info, tr_multi, warning
 from A.utils import copy_to_clipboard
 from A.utils.output import console
 
@@ -247,9 +247,21 @@ def _handle_create_result(entry: dict[str, Any], teksto: str, kopii: bool, seman
 
     if kopii or semantika_kopii:
         if kopii:
-            copy_to_clipboard(entry['uuid'][:8])
+            ok, reason = copy_to_clipboard(entry['uuid'][:8])
+            if not ok:
+                warning(tr_multi(
+                    "Ne povis kopii UUID al poŝo: {kialo}",
+                    "Could not copy UUID to clipboard: {kialo}",
+                    "Impossible de copier l'UUID dans le presse-papier : {kialo}",
+                ).format(kialo=reason))
         if semantika_kopii:
-            copy_to_clipboard(f"[{entry['teksto']}]({entry['uuid'][:8]})")
+            ok, reason = copy_to_clipboard(f"[{entry['teksto']}]({entry['uuid'][:8]})")
+            if not ok:
+                warning(tr_multi(
+                    "Ne povis kopii referencon al poŝo: {kialo}",
+                    "Could not copy reference to clipboard: {kialo}",
+                    "Impossible de copier la référence dans le presse-papier : {kialo}",
+                ).format(kialo=reason))
 
 
 __all__ = ["_build_create_data", "_build_update_data", "_handle_create_result"]
