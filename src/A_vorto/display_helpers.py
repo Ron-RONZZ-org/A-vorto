@@ -8,7 +8,7 @@ from typing import Any
 from rich.panel import Panel
 from rich.text import Text
 
-from A import info, warning, tr_multi, copy_to_clipboard
+from A import info, tr_multi, copy_to_clipboard
 from A.utils.output import console, print_table
 from A.core.references import resolve as resolve_ref
 
@@ -84,21 +84,9 @@ def _show_entry(
     # Handle clipboard copy
     if kopii or semantika_kopii:
         if kopii:
-            ok, reason = copy_to_clipboard(entry['uuid'][:8])
-            if not ok:
-                warning(tr_multi(
-                    "Ne povis kopii UUID al poŝo: {kialo}",
-                    "Could not copy UUID to clipboard: {kialo}",
-                    "Impossible de copier l'UUID dans le presse-papier : {kialo}",
-                ).format(kialo=reason))
+            copy_to_clipboard(entry['uuid'][:8])
         if semantika_kopii:
-            ok, reason = copy_to_clipboard(f"[{entry['teksto']}]({entry['uuid'][:8]})")
-            if not ok:
-                warning(tr_multi(
-                    "Ne povis kopii referencon al poŝo: {kialo}",
-                    "Could not copy reference to clipboard: {kialo}",
-                    "Impossible de copier la référence dans le presse-papier : {kialo}",
-                ).format(kialo=reason))
+            copy_to_clipboard(f"[{entry['teksto']}]({entry['uuid'][:8]})")
 
     # Build panel title (truncated to console width)
     full_text = str(entry.get("teksto", "") or "")
