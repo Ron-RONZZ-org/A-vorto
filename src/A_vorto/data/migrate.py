@@ -41,6 +41,31 @@ _MIGRATIONS: list[tuple[int, str, list[str]]] = [
             "ALTER TABLE vorto ADD COLUMN forigita_je TEXT",
         ],
     ),
+    # Migration 003: Review session tracking tables
+    (
+        3,
+        "add recenzo (review) tables",
+        [
+            """CREATE TABLE IF NOT EXISTS recenzo_sesio (
+                uuid TEXT PRIMARY KEY,
+                modo TEXT NOT NULL,
+                kreita_je TEXT NOT NULL,
+                daŭro_sekundoj REAL,
+                entute INTEGER NOT NULL,
+                ĝustaj INTEGER NOT NULL,
+                malĝustaj INTEGER NOT NULL
+            )""",
+            """CREATE TABLE IF NOT EXISTS recenzo_rezulto (
+                uuid TEXT PRIMARY KEY,
+                sesio_uuid TEXT NOT NULL REFERENCES recenzo_sesio(uuid),
+                vorto_uuid TEXT NOT NULL,
+                ĝusta INTEGER NOT NULL,
+                respondo TEXT,
+                tempo_sekundoj REAL
+            )""",
+            "CREATE INDEX IF NOT EXISTS idx_rezulto_sesio ON recenzo_rezulto(sesio_uuid)",
+        ],
+    ),
 ]
 
 

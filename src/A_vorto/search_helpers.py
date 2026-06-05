@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from A import info, tr_multi
+from A.utils.date import date_range
 from A.utils.output import console, print_table
 from A.utils.interactive import select_candidate
 
@@ -60,11 +61,13 @@ def _run_search(
         filters["nivelo_min"] = nivelo_min
     if nivelo_max:
         filters["nivelo_max"] = nivelo_max
+    # Convert partial date tokens to ISO range (start/end of day)
+    range_filters: dict[str, tuple[str | None, str | None]] | None = None
     if dato_de or dato_gis:
-        filters["dato_de"] = dato_de
-        filters["dato_gis"] = dato_gis
+        iso_start, iso_end = date_range(dato_de, dato_gis)
+        range_filters = {"kreita_je": (iso_start, iso_end)}
 
-    if teksto is None and not filters:
+    if teksto is None and not filters and not range_filters:
         entries = service.list(order_by=ordo, desc=False, limit=limo)
     else:
         entries = service.search_advanced(
@@ -72,6 +75,7 @@ def _run_search(
             filters=filters,
             fuzzy=not preciza and not regex,
             limit=limo,
+            range_filters=range_filters,
         )
 
     return entries
