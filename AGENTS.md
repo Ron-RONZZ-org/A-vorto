@@ -28,6 +28,7 @@ Before adding new CLI commands or changing existing ones:
 | `importi` | `importi` | ✓ exact match required |
 | (none) | `list` | A-only bonus |
 | (none) | `rubujo`, `restaurigi`, `senrubujigi` | A-only bonus |
+| (none) | `recenzi`, `recenzi-historio` | A-only bonus — interactive review |
 
 ### Output Format
 
@@ -90,6 +91,8 @@ src/A_vorto/
 ├── aldoni_cmd.py        # aldoni command (~228 lines) — create with duplicate check
 ├── modifi_cmd.py        # modifi command (~234 lines) — update with clear-* flags
 ├── serci_cmd.py         # serci/serchi command (~199 lines) — filtered search
+├── recenzi_cmd.py       # recenzi command (~347 lines) — interactive review CLI
+├── recenzi_helpers.py   # Review modes, session persistence, history (~522 lines)
 ├── service.py           # CRUDService with FTS5, links, and references
 ├── display_helpers.py   # Rich Panel display + _display_results (~266 lines)
 ├── _display_references.py  # Inline reference resolution (~143 lines)
@@ -171,8 +174,10 @@ A-vorto integrates the following A-core features:
 | Soft-delete trash | `rubujo`, `restaurigi`, `senrubujigi` | `CRUDService.delete(soft=True)` |
 | Import/Export | `importi`, `eksporti` | `A.core.import_`, `A.core.export` |
 | Markdown preview | `vidi --html` | `A.core.markdown_html_view` |
-| FTS5 search | `serchi` | `CRUDService.search_advanced()` |
-| Fuzzy search | `serchi --fuzzy` | `CRUDService.search_fuzzy()` |
+| FTS5 search | `serci` | `CRUDService.search_advanced()` |
+| Fuzzy search | `serci --fuzzy` | `CRUDService.search_fuzzy()` |
+| Date range filter | `serci --dato-de/--dato-gis` | `A.utils.date.date_range()` + `range_filters` in FTS builder |
+| Review history | `recenzi-historio` | DB tables `recenzo_sesio`, `recenzo_rezulto` |
 | Bidirectional links | `--ligilo` on `aldoni`/`modifi` | `A.core.links` (A-core #18) |
 | Cross-references | `--ref` on `vidi` | `A.core.references` (A-core #19) |
 
@@ -210,8 +215,9 @@ PYTHONPATH=../A-core/src:src .venv/bin/python -m pytest tests/
 | `test_service.py` | 20 | CRUDService operations + ligilo ref resolution (11) |
 | `test_storage.py` | 5 | SQLite storage layer (get_db singleton) |
 | `test_utils.py` | 63 | Type maps, parsers, normalizers, split_difino_uzo |
+| `test_recenzi.py` | 20 | Date filtering, review helpers, session persistence |
 
-**Total: 105 tests — all passing**
+**Total: 125 tests — all passing**
 
 ## Documentation
 

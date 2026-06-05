@@ -25,6 +25,8 @@ A vorto serci <QUERY> [OPTIONS]
 | `--tipo` | `-t` | Filter by type (su, aj, etc.) |
 | `--temo` | `-m` | Filter by theme |
 | `--tono` | `-T` | Filter by tonality (nf, fo, am) |
+| `--dato-de` | | Filter by start date (YYYYMMDD, MMDD, DD, YYYY-MM-DD) |
+| `--dato-gis` | | Filter by end date (same formats) |
 
 ## Examples
 
@@ -55,6 +57,12 @@ A vorto serci "hello" --temo gramatiko
 
 # Filter by tonality
 A vorto serci "hello" --tono nf
+
+# Filter by date range (partial dates supported)
+A vorto serci "hello" --dato-de 2026-01-01 --dato-gis 20261231
+
+# Filter entries created on a specific date
+A vorto serci --dato-de 20260601 --dato-gis 20260601
 ```
 
 ## Search Features
