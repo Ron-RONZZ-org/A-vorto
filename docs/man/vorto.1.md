@@ -39,10 +39,10 @@ Delete a word entry.
 
 :   `A vorto forigi UUID [--hard]`
 
-### serchi
+### serci
 Full-text search.
 
-:   `A vorto serchi QUERY [--fuzzy] [-l LIMIT]`
+:   `A vorto serci QUERY [--fuzzy] [-l LIMIT]`
 
 ### malfari
 Undo the last operation.
@@ -144,7 +144,7 @@ Export to JSON/TOML file.
 :   `--clear-ligiloj`
 :       Clear all links
 
-### serchi Options
+### serci Options
 
 :   `-f, --fuzzy`
 :       Enable fuzzy matching
@@ -186,7 +186,7 @@ Export to JSON/TOML file.
 A vorto aldoni "hello" --lingvo en --difino "saluton"
 
 # Search
-A vorto serchi "hello"
+A vorto serci "hello"
 
 # View with references
 A vorto vidi 952f2079 --ref

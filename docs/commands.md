@@ -44,5 +44,5 @@ A vorto vidi <uuid> --ref
 A vorto modifi <uuid> --ligilo-add <target-uuid>
 
 # Search with fuzzy matching
-A vorto serchi "word" --fuzzy
+A vorto serci "word" --fuzzy
 ```

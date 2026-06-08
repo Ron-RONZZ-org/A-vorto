@@ -37,7 +37,7 @@ nav:
       - aldoni: commands/aldoni.md
       - modifi: commands/modifi.md
       - forigi: commands/forigi.md
-      - serchi: commands/serchi.md
+      - serci: commands/serci.md
       - malfari: commands/malfari.md
       - rubujo: commands/rubujo.md
       - importi/eksporti: commands/import-export.md

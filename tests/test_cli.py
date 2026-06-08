@@ -77,69 +77,69 @@ class TestCLI:
         result = runner.invoke(app, ["vidi", str(uuid.uuid4()), "--cxio"])
         assert result.exit_code in [0, 1]
 
-    def test_serchi(self):
-        """Test serchi command."""
+    def test_serci(self):
+        """Test serci command."""
         from A_vorto.cli import app
         
         runner = CliRunner()
-        result = runner.invoke(app, ["serchi", "test"])
+        result = runner.invoke(app, ["serci", "test"])
         # Should run without error
         assert result.exit_code == 0
 
-    def test_serchi_with_lingvo_filter(self):
-        """Test serchi command with lingvo filter."""
+    def test_serci_with_lingvo_filter(self):
+        """Test serci command with lingvo filter."""
         from A_vorto.cli import app
         
         runner = CliRunner()
-        result = runner.invoke(app, ["serchi", "test", "--lingvo", "eo"])
+        result = runner.invoke(app, ["serci", "test", "--lingvo", "eo"])
         assert result.exit_code == 0
 
-    def test_serchi_with_kategorio_filter(self):
-        """Test serchi command with lingvo filter."""
+    def test_serci_with_kategorio_filter(self):
+        """Test serci command with lingvo filter."""
         from A_vorto.cli import app
         
         runner = CliRunner()
-        result = runner.invoke(app, ["serchi", "test", "--lingvo", "eo"])
+        result = runner.invoke(app, ["serci", "test", "--lingvo", "eo"])
         assert result.exit_code == 0
 
-    def test_serchi_with_tipo_filter(self):
-        """Test serchi command with tipo filter."""
+    def test_serci_with_tipo_filter(self):
+        """Test serci command with tipo filter."""
         from A_vorto.cli import app
         
         runner = CliRunner()
-        result = runner.invoke(app, ["serchi", "test", "--tipo", "su"])
+        result = runner.invoke(app, ["serci", "test", "--tipo", "su"])
         assert result.exit_code == 0
 
-    def test_serchi_with_temo_filter(self):
-        """Test serchi command with temo filter."""
+    def test_serci_with_temo_filter(self):
+        """Test serci command with temo filter."""
         from A_vorto.cli import app
         
         runner = CliRunner()
-        result = runner.invoke(app, ["serchi", "test", "--temo", "gramatiko"])
+        result = runner.invoke(app, ["serci", "test", "--temo", "gramatiko"])
         assert result.exit_code == 0
 
-    def test_serchi_with_tono_filter(self):
-        """Test serchi command with tono filter."""
+    def test_serci_with_tono_filter(self):
+        """Test serci command with tono filter."""
         from A_vorto.cli import app
         
         runner = CliRunner()
-        result = runner.invoke(app, ["serchi", "test", "--tono", "nf"])
+        result = runner.invoke(app, ["serci", "test", "--tono", "nf"])
         assert result.exit_code == 0
 
-    def test_serchi_with_combined_filters(self):
-        """Test serchi command with multiple filters."""
+    def test_serci_with_combined_filters(self):
+        """Test serci command with multiple filters."""
         from A_vorto.cli import app
         
         runner = CliRunner()
-        result = runner.invoke(app, ["serchi", "test", "--lingvo", "eo"])
+        result = runner.invoke(app, ["serci", "test", "--lingvo", "eo"])
         assert result.exit_code == 0
 
-    def test_serchi_with_filter_and_fuzzy(self):
-        """Test serchi command with filter enabled."""
+    def test_serci_with_filter_and_fuzzy(self):
+        """Test serci command with filter enabled."""
         from A_vorto.cli import app
         
         runner = CliRunner()
-        result = runner.invoke(app, ["serchi", "test", "--lingvo", "eo"])
+        result = runner.invoke(app, ["serci", "test", "--lingvo", "eo"])
         assert result.exit_code == 0
 
     def test_modifi_nonexistent(self):
@@ -200,7 +200,7 @@ class TestCRUDOperations:
         assert "testword" in result.output
         
         # 4. Search for the word
-        result = runner.invoke(app, ["serchi", "test"])
+        result = runner.invoke(app, ["serci", "test"])
         assert result.exit_code == 0
         assert "testword" in result.output
         

@@ -90,7 +90,7 @@ src/A_vorto/
 ├── vidi_cmd.py          # vidi command (~204 lines) — view/list entries
 ├── aldoni_cmd.py        # aldoni command (~228 lines) — create with duplicate check
 ├── modifi_cmd.py        # modifi command (~234 lines) — update with clear-* flags
-├── serci_cmd.py         # serci/serchi command (~199 lines) — filtered search
+├── serci_cmd.py         # serci command (~199 lines) — filtered search
 ├── recenzi_cmd.py       # recenzi command (~347 lines) — interactive review CLI
 ├── recenzi_helpers.py   # Review modes, session persistence, history (~522 lines)
 ├── service.py           # CRUDService with FTS5, links, and references

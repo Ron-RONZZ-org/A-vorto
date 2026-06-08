@@ -12,7 +12,7 @@ pip install A-vorto
 A vorto aldoni "hello" --difino "saluton" --lingvo en
 
 # Search
-A vorto serchi "hello"
+A vorto serci "hello"
 
 # View with references
 A vorto vidi <uuid> --ref
@@ -40,7 +40,7 @@ A vorto aldoni "world" --ligilo <uuid-of-hello>
 | `aldoni` | Add new entry |
 | `modifi` | Modify entry |
 | `forigi` | Delete entry |
-| `serchi` | Full-text search |
+| \`serci\` | Full-text search |
 | `malfari` | Undo last operation |
 | `rubujo` | View trash |
 | `restaurigi` | Restore from trash |
