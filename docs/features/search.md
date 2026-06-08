@@ -7,7 +7,7 @@ A-vorto provides full-text search via SQLite FTS5 with additional fuzzy matching
 Uses SQLite's FTS5 extension for fast, relevance-ranked search.
 
 ```bash
-A vorto serchi "hello"
+A vorto serci "hello"
 ```
 
 ### Features
@@ -21,13 +21,13 @@ A vorto serchi "hello"
 
 ```bash
 # Basic search
-A vorto serchi "cœur"
+A vorto serci "cœur"
 
 # With filter
-A vorto serchi "hello" --lingvo en
+A vorto serci "hello" --lingvo en
 
 # Multiple terms
-A vorto serchi "hello world"
+A vorto serci "hello world"
 ```
 
 ## French Ligature Normalization
@@ -46,7 +46,7 @@ So searching "cœur" will find entries with "coeur".
 For typo tolerance, use fuzzy search:
 
 ```bash
-A vorto serchi "heelo" --fuzzy
+A vorto serci "heelo" --fuzzy
 ```
 
 Fuzzy matching uses Levenshtein distance. Install `rapidfuzz` for better performance:

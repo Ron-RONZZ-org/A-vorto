@@ -81,7 +81,6 @@ app.command(name="vidi")(vidi_func)
 app.command(name="aldoni")(aldoni_func)
 app.command(name="modifi")(modifi_func)
 app.command(name="serci")(serci_func)
-app.command(name="serchi", deprecated=True)(serci_func)
 
 # Review command (flat: `vorto recenzi`) + history sub-typer
 app.command(name="recenzi", rich_help_panel="Recenzi")(recenzi_func)
