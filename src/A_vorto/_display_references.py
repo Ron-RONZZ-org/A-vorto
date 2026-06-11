@@ -44,15 +44,13 @@ def _resolve_inline_refs(text: str, service: Any) -> str:
                 return _resolve_cross_module("vt", uuid, label)
             target = service.get(uuid)
             if target:
-                resolved = label or target.get("teksto", "")
-                return f"{resolved} (#{uuid[:8]})"
+                return label or target.get("teksto", "")
             return m.group(0)
         elif m.group(3):
             uuid = m.group(3)
             target = service.get(uuid)
             if target:
-                resolved = label or target.get("teksto", "")
-                return f"{resolved} #{uuid[:8]}"
+                return target.get("teksto", "")
             return m.group(0)
         elif m.group(4):
             prefix = m.group(4).lower()
@@ -72,12 +70,11 @@ def _resolve_cross_module(prefix: str, uuid: str, label: str = "") -> str:
         label: Optional label from markdown link.
 
     Returns:
-        Resolved CLI string, or original prefix#uuid if unresolvable.
+        Resolved display text (label or title), or original ref if unresolvable.
     """
     resolved = resolve_ref(prefix, uuid)
     if resolved and resolved.exists and resolved.title:
-        display = label or resolved.title
-        return f"{display} ({prefix}#{uuid[:8]})"
+        return label or resolved.title
     return label or f"{prefix}#{uuid[:8]}"
 
 
@@ -88,12 +85,12 @@ def _try_cross_module_fallback(uuid: str) -> str | None:
         uuid: UUID to resolve (8+ hex chars).
 
     Returns:
-        Display string like "Title (ec#uuid)" if found, None otherwise.
+        Display title if found, None otherwise.
     """
     for prefix in ("ec", "vt"):
         resolved = resolve_ref(prefix, uuid)
         if resolved and resolved.exists and resolved.title:
-            return f"{resolved.title} ({prefix}#{uuid[:8]})"
+            return resolved.title
     return None
 
 

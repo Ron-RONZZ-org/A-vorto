@@ -166,7 +166,7 @@ def recenzi(
     service = get_service()
 
     if modo == "difinoj":
-        stats = _recenzi_difinoj(entries)
+        stats = _recenzi_difinoj(entries, service)
     elif modo == "tajpu":
         stats = _recenzi_tajpu(entries, service)
     elif modo == "multobla":

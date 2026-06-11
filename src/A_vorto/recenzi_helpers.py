@@ -27,6 +27,7 @@ from rich import box
 from A import error, info, success, tr_multi
 from A.utils.output import console
 from A_vorto.data.storage import get_db
+from A_vorto._display_references import _resolve_inline_refs
 
 # ── Distractor helpers ────────────────────────────────────────────────────────
 
@@ -63,11 +64,15 @@ def _get_same_type_distractors(
 # ── Review modes ──────────────────────────────────────────────────────────────
 
 
-def _recenzi_difinoj(entries: list[dict[str, Any]]) -> dict[str, Any]:
+def _recenzi_difinoj(
+    entries: list[dict[str, Any]],
+    service: Any = None,
+) -> dict[str, Any]:
     """Mode 1: show definitions + usage examples, Enter to advance.
 
     Args:
         entries: List of entry dicts to review.
+        service: VortoService for resolving inline references.
 
     Returns:
         Stats dict: {entute, gustaj, malgustaj, rezultoj: [...]}
@@ -85,19 +90,21 @@ def _recenzi_difinoj(entries: list[dict[str, Any]]) -> dict[str, Any]:
         # Show the word
         console.print(f"[bold]{entry.get('teksto', '')}[/]")
 
-        # Show difinoj
+        # Show difinoj (with inline refs resolved)
         difinoj = _parse_json_field(entry, "difinoj")
         if difinoj:
             console.print("\n[bold]difinoj:[/]")
             for d in difinoj:
-                console.print(f"  • {d}")
+                rendered = _resolve_inline_refs(d, service) if service else d
+                console.print(f"  • {rendered}")
 
-        # Show uzoj
+        # Show uzoj (with inline refs resolved)
         uzoj = _parse_json_field(entry, "uzoj")
         if uzoj:
             console.print("\n[italic]uzoj:[/]")
             for u in uzoj:
-                console.print(f"  {u}")
+                rendered = _resolve_inline_refs(u, service) if service else u
+                console.print(f"  {rendered}")
 
         typer.prompt("", default="")
         stats["gustaj"] += 1  # difinoj mode is self-paced, counts as correct
@@ -134,17 +141,19 @@ def _recenzi_tajpu(
         console.print()
         _show_review_header(entry, len(entries), stats["gustaj"] + stats["malgustaj"] + 1)
 
-        # Show difinoj (hide word)
+        # Show difinoj (hide word, inline refs resolved)
         difinoj = _parse_json_field(entry, "difinoj")
         if difinoj:
             console.print("[bold]difinoj:[/]")
             for d in difinoj:
-                console.print(f"  • {d}")
+                rendered = _resolve_inline_refs(d, service) if service else d
+                console.print(f"  • {rendered}")
         uzoj = _parse_json_field(entry, "uzoj")
         if uzoj:
             console.print("\n[italic]uzoj:[/]")
             for u in uzoj:
-                console.print(f"  {u}")
+                rendered = _resolve_inline_refs(u, service) if service else u
+                console.print(f"  {rendered}")
 
         correct = entry.get("teksto", "").strip()
         start = time.time()
@@ -200,17 +209,19 @@ def _recenzi_multobla(
         console.print()
         _show_review_header(entry, len(entries), stats["gustaj"] + stats["malgustaj"] + 1)
 
-        # Show difinoj (hide word)
+        # Show difinoj (hide word, inline refs resolved)
         difinoj = _parse_json_field(entry, "difinoj")
         if difinoj:
             console.print("[bold]difinoj:[/]")
             for d in difinoj:
-                console.print(f"  • {d}")
+                rendered = _resolve_inline_refs(d, service) if service else d
+                console.print(f"  • {rendered}")
         uzoj = _parse_json_field(entry, "uzoj")
         if uzoj:
             console.print("\n[italic]uzoj:[/]")
             for u in uzoj:
-                console.print(f"  {u}")
+                rendered = _resolve_inline_refs(u, service) if service else u
+                console.print(f"  {rendered}")
 
         correct = entry.get("teksto", "").strip()
 
