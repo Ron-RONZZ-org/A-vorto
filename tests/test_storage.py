@@ -21,11 +21,11 @@ def temp_dir(tmp_path: Path) -> Path:
 
 @pytest.fixture
 def mock_data_dir(monkeypatch: pytest.MonkeyPatch, temp_dir: Path) -> None:
-    """Mock data directory to temp path."""
+    """Redirect data directory to temp path via A_DIR and reset singleton."""
     import A_vorto.data.storage as storage_module
 
-    monkeypatch.setattr(storage_module, "_DATA_DIR", temp_dir)
-    monkeypatch.setattr(storage_module, "_DB_FILE", temp_dir / "vorto.db")
+    monkeypatch.setenv("A_DIR", str(temp_dir))
+    storage_module._db_instance = None
 
 
 class TestEnsureDirs:
@@ -35,11 +35,11 @@ class TestEnsureDirs:
         """Test that ensure_dirs creates the data directory."""
         import A_vorto.data.storage as storage_module
 
-        # ensure_dirs should create the directory
         storage_module.ensure_dirs()
 
-        assert temp_dir.exists()
-        assert temp_dir.is_dir()
+        expected = temp_dir / "data"
+        assert expected.exists()
+        assert expected.is_dir()
 
 
 class TestGetDb:
@@ -50,14 +50,11 @@ class TestGetDb:
         import A_vorto.data.storage as storage_module
         from A.data.base import SQLiteDB
 
-        # Mock _ensure_dirs to avoid actual filesystem operations
         with patch.object(storage_module, "_ensure_dirs", lambda: None):
             db = storage_module.get_db()
 
-        # Verify it's a SQLiteDB instance
         assert isinstance(db, SQLiteDB)
 
-        # Verify vorto table exists
         result = db.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='vorto'")
         assert len(result) == 1
         assert result[0]["name"] == "vorto"
@@ -69,13 +66,11 @@ class TestGetDb:
         with patch.object(storage_module, "_ensure_dirs", lambda: None):
             db = storage_module.get_db()
 
-        # Get all indexes on vorto table
         result = db.execute(
             "SELECT name FROM sqlite_master WHERE type='index' AND tbl_name='vorto'"
         )
         index_names = [r["name"] for r in result]
 
-        # Verify expected indexes exist
         assert "idx_vorto_teksto" in index_names
         assert "idx_vorto_lingvo" in index_names
         assert "idx_vorto_kategorio" in index_names
@@ -87,11 +82,9 @@ class TestGetDb:
         with patch.object(storage_module, "_ensure_dirs", lambda: None):
             db = storage_module.get_db()
 
-        # Get column info
         result = db.execute("PRAGMA table_info(vorto)")
         columns = {r["name"]: r for r in result}
 
-        # Verify required columns exist
         required_columns = [
             "uuid", "teksto", "lingvo", "kategorio", "tipo", "temo",
             "tono", "nivelo", "difinoj", "uzoj", "etikedoj", "ligiloj",
@@ -101,11 +94,7 @@ class TestGetDb:
         for col in required_columns:
             assert col in columns, f"Missing column: {col}"
 
-        # Verify teksto is NOT NULL
         assert columns["teksto"]["notnull"] == 1
-
-        # Note: pk info not available in all SQLite versions
-        # UUID is primary key by schema definition
 
 
 class TestGetDbSingleton:
@@ -119,9 +108,6 @@ class TestGetDbSingleton:
             db1 = storage_module.get_db()
             db2 = storage_module.get_db()
 
-        # get_db now caches the instance (singleton pattern)
-        # Same as service singleton — prevents "database is locked" from
-        # multiple connections to the same DB file.
         assert db1 is db2
 
 
