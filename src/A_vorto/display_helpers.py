@@ -22,18 +22,18 @@ from A_vorto._display_references import (
 from A_vorto._display_preview import _preview_entry
 
 
-def show_field(label: str, value: Any, cxio: bool = False) -> bool:
+def show_field(label: str, value: Any, cio: bool = False) -> bool:
     """Check if field should be displayed based on value and display mode.
 
     Args:
         label: Field label (unused, for consistency).
         value: The field value to check.
-        cxio: If True, show all fields regardless of value.
+        cio: If True, show all fields regardless of value.
 
     Returns:
         True if the field should be displayed.
     """
-    if cxio:
+    if cio:
         return True
     if value is None:
         return False
@@ -64,7 +64,7 @@ def _format_value(value: Any, empty_label: str = "") -> str:
 def _show_entry(
     service: Any,
     entry: dict[str, Any],
-    cxio: bool = False,
+    cio: bool = False,
     ref: bool = False,
     html: bool = False,
     kopii: bool = False,
@@ -75,7 +75,7 @@ def _show_entry(
     Args:
         service: VortoService instance for resolving links.
         entry: Entry dict from the database.
-        cxio: Show all fields.
+        cio: Show all fields.
         ref: Show linked entries and references.
         html: Open as HTML preview.
         kopii: Copy #uuid to clipboard.
@@ -143,15 +143,15 @@ def _show_entry(
         )
         lines.append(f"[dim]verko:[/] {verko_text}")
 
-    if cxio:
-        if show_field("Temo", entry.get("temo"), cxio):
+    if cio:
+        if show_field("Temo", entry.get("temo"), cio):
             temo_text = _resolve_inline_refs(
                 _format_value(entry.get("temo") or ""), service
             )
             lines.append(f"[dim]temo:[/] {temo_text}")
-        if show_field("Tono", entry.get("tono"), cxio):
+        if show_field("Tono", entry.get("tono"), cio):
             lines.append(f"[dim]tono:[/] {_format_value(entry.get('tono'))}")
-        if show_field("Nivelo", entry.get("nivelo"), cxio):
+        if show_field("Nivelo", entry.get("nivelo"), cio):
             nivelo = entry.get("nivelo")
             lines.append(f"[dim]nivelo:[/] {f'{nivelo:.1f}' if nivelo is not None else ''}")
 
@@ -181,13 +181,13 @@ def _show_entry(
                     section_label += f"\n   [italic]{rendered_uzoj[i - 1]}[/]"
         lines.append(section_label)
 
-    if cxio:
+    if cio:
         etikedoj_raw = entry.get("etikedoj") or "{}"
         if isinstance(etikedoj_raw, str):
             etikedoj = json.loads(etikedoj_raw) if etikedoj_raw.strip() else {}
         else:
             etikedoj = etikedoj_raw or {}
-        if show_field("Etikedoj", etikedoj, cxio=True):
+        if show_field("Etikedoj", etikedoj, cio=True):
             tags_parts = [f"[dim]{k}:[/] {v}" for k, v in etikedoj.items()]
             if tags_parts:
                 lines.append("\n[bold]etikedoj:[/]\n" + "\n".join(tags_parts))
@@ -224,7 +224,7 @@ def _show_entry(
         if link_texts:
             lines.append("\n".join(link_texts))
 
-    if cxio:
+    if cio:
         lines.append(
             f"[dim]kreita:[/] {entry.get('kreita_je') or ''}\n"
             f"[dim]modifita:[/] {entry.get('modifita_je') or ''}"

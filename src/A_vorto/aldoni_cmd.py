@@ -202,7 +202,7 @@ def aldoni(
         entry = service.update(existing["uuid"], data)
         info(
             tr_multi(
-                f"Gxisdatigis {teksto}",
+                f"Ĝisdatigis {teksto}",
                 f"Updated {teksto}",
                 f"Mis a jour {teksto}",
             )
@@ -214,7 +214,7 @@ def aldoni(
         _preview_entry(data)
         confirmed = confirm_action(
             tr_multi(
-                "Cxu krei tiun eniron?",
+                "Ĉu krei tiun eniron?",
                 "Create this entry?",
                 "Creer cette entree?",
             ),
