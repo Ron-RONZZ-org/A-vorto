@@ -103,11 +103,7 @@ def aldoni(
         None,
         "-L",
         "--ligilo",
-        help=tr_multi(
-            "Link to UUID(s), #UUID, ec#ref, vt#ref, or text (e.g. -L saluton)",
-            "Link to UUID(s), #UUID, ec#ref, vt#ref, or text (e.g. -L saluton)",
-            "Lier a UUID(s), #UUID, ec#ref, vt#ref, ou texte (ex. -L saluton)",
-        ),
+        help=tr_multi("Link to UUID(s)", "Link to UUID(s)", "Lier a UUID(s)"),
     ),
     autoro: Optional[str] = typer.Option(
         None,
@@ -202,7 +198,7 @@ def aldoni(
         entry = service.update(existing["uuid"], data)
         info(
             tr_multi(
-                f"Ĝisdatigis {teksto}",
+                f"Gxisdatigis {teksto}",
                 f"Updated {teksto}",
                 f"Mis a jour {teksto}",
             )
@@ -214,7 +210,7 @@ def aldoni(
         _preview_entry(data)
         confirmed = confirm_action(
             tr_multi(
-                "Ĉu krei tiun eniron?",
+                "Cxu krei tiun eniron?",
                 "Create this entry?",
                 "Creer cette entree?",
             ),

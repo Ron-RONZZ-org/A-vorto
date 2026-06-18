@@ -8,7 +8,7 @@ from typing import Any
 from rich.panel import Panel
 from rich.text import Text
 
-from A import info, warning, tr_multi, copy_to_clipboard
+from A import info, tr_multi, copy_to_clipboard
 from A.utils.output import console, print_table
 from A.core.references import resolve as resolve_ref
 
@@ -22,18 +22,18 @@ from A_vorto._display_references import (
 from A_vorto._display_preview import _preview_entry
 
 
-def show_field(label: str, value: Any, cio: bool = False) -> bool:
+def show_field(label: str, value: Any, cxio: bool = False) -> bool:
     """Check if field should be displayed based on value and display mode.
 
     Args:
         label: Field label (unused, for consistency).
         value: The field value to check.
-        cio: If True, show all fields regardless of value.
+        cxio: If True, show all fields regardless of value.
 
     Returns:
         True if the field should be displayed.
     """
-    if cio:
+    if cxio:
         return True
     if value is None:
         return False
@@ -64,7 +64,7 @@ def _format_value(value: Any, empty_label: str = "") -> str:
 def _show_entry(
     service: Any,
     entry: dict[str, Any],
-    cio: bool = False,
+    cxio: bool = False,
     ref: bool = False,
     html: bool = False,
     kopii: bool = False,
@@ -75,7 +75,7 @@ def _show_entry(
     Args:
         service: VortoService instance for resolving links.
         entry: Entry dict from the database.
-        cio: Show all fields.
+        cxio: Show all fields.
         ref: Show linked entries and references.
         html: Open as HTML preview.
         kopii: Copy #uuid to clipboard.
@@ -84,21 +84,9 @@ def _show_entry(
     # Handle clipboard copy
     if kopii or semantika_kopii:
         if kopii:
-            ok, reason = copy_to_clipboard(entry['uuid'][:8])
-            if not ok:
-                warning(tr_multi(
-                    "Ne povis kopii UUID al poŝo: {kialo}",
-                    "Could not copy UUID to clipboard: {kialo}",
-                    "Impossible de copier l'UUID dans le presse-papier : {kialo}",
-                ).format(kialo=reason))
+            copy_to_clipboard(entry['uuid'][:8])
         if semantika_kopii:
-            ok, reason = copy_to_clipboard(f"[{entry['teksto']}]({entry['uuid'][:8]})")
-            if not ok:
-                warning(tr_multi(
-                    "Ne povis kopii referencon al poŝo: {kialo}",
-                    "Could not copy reference to clipboard: {kialo}",
-                    "Impossible de copier la référence dans le presse-papier : {kialo}",
-                ).format(kialo=reason))
+            copy_to_clipboard(f"[{entry['teksto']}]({entry['uuid'][:8]})")
 
     # Build panel title (truncated to console width)
     full_text = str(entry.get("teksto", "") or "")
@@ -143,15 +131,15 @@ def _show_entry(
         )
         lines.append(f"[dim]verko:[/] {verko_text}")
 
-    if cio:
-        if show_field("Temo", entry.get("temo"), cio):
+    if cxio:
+        if show_field("Temo", entry.get("temo"), cxio):
             temo_text = _resolve_inline_refs(
                 _format_value(entry.get("temo") or ""), service
             )
             lines.append(f"[dim]temo:[/] {temo_text}")
-        if show_field("Tono", entry.get("tono"), cio):
+        if show_field("Tono", entry.get("tono"), cxio):
             lines.append(f"[dim]tono:[/] {_format_value(entry.get('tono'))}")
-        if show_field("Nivelo", entry.get("nivelo"), cio):
+        if show_field("Nivelo", entry.get("nivelo"), cxio):
             nivelo = entry.get("nivelo")
             lines.append(f"[dim]nivelo:[/] {f'{nivelo:.1f}' if nivelo is not None else ''}")
 
@@ -181,13 +169,13 @@ def _show_entry(
                     section_label += f"\n   [italic]{rendered_uzoj[i - 1]}[/]"
         lines.append(section_label)
 
-    if cio:
+    if cxio:
         etikedoj_raw = entry.get("etikedoj") or "{}"
         if isinstance(etikedoj_raw, str):
             etikedoj = json.loads(etikedoj_raw) if etikedoj_raw.strip() else {}
         else:
             etikedoj = etikedoj_raw or {}
-        if show_field("Etikedoj", etikedoj, cio=True):
+        if show_field("Etikedoj", etikedoj, cxio=True):
             tags_parts = [f"[dim]{k}:[/] {v}" for k, v in etikedoj.items()]
             if tags_parts:
                 lines.append("\n[bold]etikedoj:[/]\n" + "\n".join(tags_parts))
@@ -224,7 +212,7 @@ def _show_entry(
         if link_texts:
             lines.append("\n".join(link_texts))
 
-    if cio:
+    if cxio:
         lines.append(
             f"[dim]kreita:[/] {entry.get('kreita_je') or ''}\n"
             f"[dim]modifita:[/] {entry.get('modifita_je') or ''}"
@@ -247,12 +235,7 @@ def _show_entry(
     if html and entry.get("teksto"):
         from A.core.markdown_html_view import preview_markdown
 
-        path = preview_markdown(entry["teksto"], title=entry["teksto"])
-        info(tr_multi(
-            f"HTML anta\u016drigardo: file://{path}",
-            f"HTML preview: file://{path}",
-            f"Aper\u00e7u HTML: file://{path}",
-        ))
+        preview_markdown(entry["teksto"], title=entry["teksto"])
 
 
 def _display_results(entries: list[dict]) -> None:

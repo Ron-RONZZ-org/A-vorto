@@ -42,10 +42,10 @@ def vidi(
             "Lister les 50 plus anciennes d'abord (sans UUID)",
         ),
     ),
-    cio: bool = typer.Option(
+    cxio: bool = typer.Option(
         False,
         "-a",
-        "--cio",
+        "--cxio",
         help=tr_multi(
             "Show all fields (including dates)",
             "Show all fields (including dates)",
@@ -193,7 +193,7 @@ def vidi(
     _show_entry(
         service,
         entry,
-        cio=cio,
+        cxio=cxio,
         ref=ref,
         html=html,
         kopii=kopii,

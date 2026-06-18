@@ -159,18 +159,18 @@ def modifi(
         None,
         "--ligilo-add",
         help=tr_multi(
-            "Add link(s) to UUID(s), #UUID, ec#ref, vt#ref, or text",
-            "Add link(s) to UUID(s), #UUID, ec#ref, vt#ref, or text",
-            "Ajouter un/des lien(s) a UUID(s), #UUID, ec#ref, vt#ref, ou texte",
+            "Add link(s) to UUID(s)",
+            "Add link(s) to UUID(s)",
+            "Ajouter un/des lien(s) a UUID(s)",
         ),
     ),
     ligilo_remove: Optional[List[str]] = typer.Option(
         None,
         "--ligilo-remove",
         help=tr_multi(
-            "Remove link(s) by UUID, #UUID, or text",
-            "Remove link(s) by UUID, #UUID, or text",
-            "Retirer un/des lien(s) par UUID, #UUID, ou texte",
+            "Remove link(s) by UUID",
+            "Remove link(s) by UUID",
+            "Retirer un/des lien(s) par UUID",
         ),
     ),
 ) -> None:
@@ -187,10 +187,6 @@ def modifi(
             )
         )
         raise typer.Exit(1)
-
-    # Resolve ligilo refs (text -> UUID, #uuid, ec#, etc.) before set operations
-    resolved_add = service.resolve_ligilo_refs(ligilo_add) if ligilo_add else None
-    resolved_remove = service.resolve_ligilo_refs(ligilo_remove) if ligilo_remove else None
 
     data = _build_update_data(
         existing=existing,
@@ -211,14 +207,14 @@ def modifi(
         clear_etikedoj=clear_etikedoj,
         clear_ligiloj=clear_ligiloj,
         clear_tipo=clear_tipo,
-        ligilo_add=resolved_add,
-        ligilo_remove=resolved_remove,
+        ligilo_add=ligilo_add,
+        ligilo_remove=ligilo_remove,
     )
 
     if not data:
         error(
             tr_multi(
-                "Neniuj ŝanĝoj",
+                "Neniuj sxangoj",
                 "No changes",
                 "Aucun changement",
             )

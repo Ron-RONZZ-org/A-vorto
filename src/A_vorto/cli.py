@@ -24,10 +24,6 @@ from A_vorto.modifi_cmd import modifi as modifi_func
 from A_vorto.vidi_cmd import vidi as vidi_func
 from A_vorto.serci_cmd import serci as serci_func
 
-# Interactive review command
-from A_vorto.recenzi_cmd import recenzi as recenzi_func
-from A_vorto.recenzi_cmd import historio_app as recenzi_historio_app
-
 app = typer.Typer(
     name="vorto",
     help=tr_multi(
@@ -81,10 +77,7 @@ app.command(name="vidi")(vidi_func)
 app.command(name="aldoni")(aldoni_func)
 app.command(name="modifi")(modifi_func)
 app.command(name="serci")(serci_func)
-
-# Review command (flat: `vorto recenzi`) + history sub-typer
-app.command(name="recenzi", rich_help_panel="Recenzi")(recenzi_func)
-app.add_typer(recenzi_historio_app, name="recenzi-historio", rich_help_panel="Recenzi")
+app.command(name="serchi", deprecated=True)(serci_func)
 
 
 @app.command("forigi")
