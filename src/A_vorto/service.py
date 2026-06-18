@@ -7,7 +7,7 @@ from typing import Any
 
 from A import info, serialize_json_columns, tr_multi
 from A.core.service import CRUDService
-from A.core.links import add_link, remove_link, get_outgoing, get_incoming, remove_all_for_entry
+from A.core.links import remove_link, get_outgoing, get_incoming, remove_all_for_entry
 from A.core.references import get_refs_in_field, resolve as resolve_ref
 from A.core.linking import sync_links_for_entry
 
@@ -57,22 +57,34 @@ class VortoService:
         return self._crud
 
     def _migrate_links(self) -> None:
-        """One-time migration: sync existing ligiloj JSON to A.core.links."""
+        """One-time migration: sync existing ligiloj JSON to A.core.links.
+
+        Batches all links into a single transaction for efficiency.
+        """
         from A.core.config import get_setting, set_setting
-        
+        from A.core.links import bulk_add_links
+
         if get_setting(MIGRATION_SENTINEL, False):
             return  # Already migrated
-        
+
         db = get_db()
-        entries = db.execute("SELECT uuid, ligiloj FROM vorto WHERE forigita_je IS NULL")
-        
+        entries = db.execute(
+            "SELECT uuid, ligiloj FROM vorto WHERE forigita_je IS NULL"
+        )
+
+        pairs: list[tuple[str, str]] = []
         for entry in entries:
             uuid = entry["uuid"]
             ligiloj = json.loads(entry.get("ligiloj") or "[]")
             for target_uuid in ligiloj:
                 if target_uuid and uuid != target_uuid:
-                    add_link("vorto", uuid, "vorto", target_uuid)
-        
+                    pairs.append((uuid, target_uuid))
+
+        if pairs:
+            inserted = bulk_add_links(pairs, source_type_default="vorto")
+        else:
+            inserted = 0
+
         set_setting(MIGRATION_SENTINEL, True)
 
     @staticmethod
@@ -219,20 +231,21 @@ class VortoService:
 
     def get_references(self, entry: dict) -> list:
         """Get cross-references from text fields (difinoj, uzoj).
-        
+
         Parses vt#uuid and ec#uuid references in entry text fields
         and resolves them to entry data.
-        
+
         Returns:
             list of ResolvedRef objects
         """
-        from A.core.references import get_refs_in_field
+        from A.core.references import parse_refs
+
         refs = []
         for field in ("difinoj", "uzoj"):
             field_val = entry.get(field) or []
             if isinstance(field_val, list):
                 for item in field_val:
-                    refs.extend(get_refs_in_field(item or ""))
+                    refs.extend(parse_refs(item or ""))
         return refs
 
     def find_by_teksto_exact(self, text: str) -> dict | None:
