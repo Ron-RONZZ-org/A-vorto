@@ -217,7 +217,7 @@ class TestCRUDOperations:
         assert "newtestword" in result.output
         
         # 6. Delete the word (hard delete to avoid trash table issue)
-        result = runner.invoke(app, ["forigi", word_uuid, "--hard"])
+        result = runner.invoke(app, ["forigi", word_uuid, "--permanenta"])
         assert result.exit_code == 0, f"Delete failed: {result.output}"
         
         # Verify deletion

@@ -144,7 +144,9 @@ def aldoni(
     yes: bool = typer.Option(
         False,
         "-y",
+        "--jes",
         "--yes",
+        hidden=True,
         help=tr_multi(
             "Skip confirmation prompt",
             "Skip confirmation prompt",

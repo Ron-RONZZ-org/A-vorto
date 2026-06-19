@@ -41,19 +41,19 @@ app = typer.Typer(
 def list(
     order_by: str = typer.Option(
         "teksto",
-        "--order-by",
+        "--ordo",
         "-o",
         help=tr_multi("Order by field", "Order by field", "Champ de tri"),
     ),
     desc: bool = typer.Option(
         False,
-        "--desc",
+        "--descenda",
         "-d",
         help=tr_multi("Descending order", "Descending order", "Ordre decroissant"),
     ),
     limit: Optional[int] = typer.Option(
         None,
-        "--limit",
+        "--limo",
         "-l",
         help=tr_multi("Limit results", "Limit results", "Limiter les resultats"),
     ),
@@ -92,7 +92,7 @@ def forigi(
     ),
     hard: bool = typer.Option(
         False,
-        "--hard",
+        "--permanenta",
         "-H",
         help=tr_multi(
             "Permanent delete (no trash)",
@@ -116,7 +116,7 @@ def malfari() -> None:
 def rubujo(
     limit: Optional[int] = typer.Option(
         20,
-        "--limit",
+        "--limo",
         "-l",
         help=tr_multi("Limit results", "Limit results", "Limiter les resultats"),
     ),
@@ -144,7 +144,7 @@ def restaurigi(
 def senrubujigi(
     days: int = typer.Option(
         30,
-        "--days",
+        "--tagoj",
         "-d",
         help=tr_multi(
             "Delete entries older than days",
@@ -169,7 +169,7 @@ def importi(
     ),
     password: Optional[str] = typer.Option(
         None,
-        "--password",
+        "--pasvorto",
         "-p",
         help=tr_multi(
             "Decryption password",
@@ -194,13 +194,13 @@ def eksporti(
     ),
     formato: str = typer.Option(
         "json",
-        "--format",
+        "--formato",
         "-f",
         help=tr_multi("Format: json, toml", "Format: json, toml", "Format: json, toml"),
     ),
     password: Optional[str] = typer.Option(
         None,
-        "--password",
+        "--pasvorto",
         "-p",
         help=tr_multi(
             "Encryption password",
