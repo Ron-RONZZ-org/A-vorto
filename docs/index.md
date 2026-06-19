@@ -40,7 +40,7 @@ A vorto aldoni "world" --ligilo <uuid-of-hello>
 | `aldoni` | Add new entry |
 | `modifi` | Modify entry |
 | `forigi` | Delete entry |
-| \`serci\` | Full-text search |
+| `serci` | Full-text search |
 | `malfari` | Undo last operation |
 | `rubujo` | View trash |
 | `restaurigi` | Restore from trash |

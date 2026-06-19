@@ -18,9 +18,7 @@ All commands are prefixed with `A vorto`.
 | [`aldoni`](commands/aldoni.md) | Add new entry |
 | [`modifi`](commands/modifi.md) | Modify entry |
 | [`forigi`](commands/forigi.md) | Delete entry |
-| [`serci`](commands/serci.md) | Full-text search with date filters |
-| [`recenzi`](commands/recenzi.md) | Interactive vocabulary review |
-| [`recenzi-historio`](commands/recenzi.md#history) | Review session history |
+| [`serci`](commands/serci.md) | Full-text search |
 | [`malfari`](commands/malfari.md) | Undo last operation |
 | [`rubujo`](commands/rubujo.md) | View trash |
 | [`restaurigi`](commands/rubujo.md#restaurigi) | Restore from trash |

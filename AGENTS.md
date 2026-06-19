@@ -3,46 +3,6 @@ This file extends [A-workspace](./workspace/AGENTS.md).
 
 This file extends root A-core AGENTS.md for the A-vorto plugin.
 
-## User Experience Consistency with autish-legacy
-
-**CRITICAL**: A-vorto must maintain feature parity and command compatibility with autish-legacy (`autish/commands/vorto.py`) for user experience continuity.
-
-### Command Compatibility Rule
-
-Before adding new CLI commands or changing existing ones:
-1. **Check autish-legacy** for the equivalent command
-2. **Match the command signature exactly** - same args, same options
-3. **Only add A-specific features** when autish-legacy doesn't have them
-
-### Command Mapping (autish-legacy → A)
-
-| autish-legacy | A-vorto | Status |
-|--------------|---------|--------|
-| `aldoni` | `aldoni` | ✓ exact match required |
-| `vidi` | `vidi` | ✓ exact match required |
-| `modifi` | `modifi` | ✓ exact match required |
-| `serci` | `serci` | ✓ exact match required |
-| `forigi` | `forigi` | ✓ exact match required |
-| `malfari` | `malfari` | ✓ exact match required |
-| `eksporti` | `eksporti` | ✓ exact match required |
-| `importi` | `importi` | ✓ exact match required |
-| (none) | `list` | A-only bonus |
-| (none) | `rubujo`, `restaurigi`, `senrubujigi` | A-only bonus |
-| (none) | `recenzi`, `recenzi-historio` | A-only bonus — interactive review |
-
-### Output Format
-
-- Match autish-legacy console output format exactly
-- Use same Rich styling conventions
-- Match table columns and widths
-
-### Data Paths
-
-- autish-legacy: `~/.local/share/autish/vorto.db`
-- A: `~/.local/share/A/vorto.db`
-
-Migration must handle path changes transparently.
-
 ## Relationship to A-core
 
 **A-vorto depends on A-core** for:
@@ -81,33 +41,19 @@ If you need a utility that should be in A-core:
 
 ## Architecture
 
-This module follows the standard A-module pattern:
-
 ```
 src/A_vorto/
-├── __init__.py           # Plugin exports
-├── cli.py               # Typer app (~216 lines) — app, thin commands, registrations
-├── vidi_cmd.py          # vidi command (~204 lines) — view/list entries
-├── aldoni_cmd.py        # aldoni command (~228 lines) — create with duplicate check
-├── modifi_cmd.py        # modifi command (~234 lines) — update with clear-* flags
-├── serci_cmd.py         # serci command (~199 lines) — filtered search
-├── recenzi_cmd.py       # recenzi command (~347 lines) — interactive review CLI
-├── recenzi_helpers.py   # Review modes, session persistence, history (~522 lines)
-├── service.py           # CRUDService with FTS5, links, and references
-├── display_helpers.py   # Rich Panel display + _display_results (~266 lines)
-├── _display_references.py  # Inline reference resolution (~143 lines)
-├── _display_preview.py  # Preview building (~114 lines)
-├── search_helpers.py    # Interactive search via select_candidate()
-├── modify_helpers.py    # Data builders for aldoni/modifi
-├── manage_helpers.py    # Business logic for forigi, malfari, rubujo, etc.
-├── import_export_helpers.py  # Import/export via A-core utilities
-├── utils.py             # Type maps, parsers, normalizers
+├── __init__.py       # Plugin exports
+├── cli.py           # Typer app (11 commands)
+├── service.py       # CRUDService with FTS5
+├── utils.py         # Type maps, parsers, normalizers (TIPO_MAP, TONO_MAP, difino/uzo parsing, etikedoj, kategorio auto-detect)
 └── data/
-    ├── __init__.py
-    ├── storage.py       # SQLite (uses A.data.base + FTSConfig)
-    ├── migrate.py       # Schema migrations
-    ├── migration_register.py  # Migration registry
-    └── migrate_from_autish.py  # Legacy data migration
+    └── storage.py  # SQLite (uses A.data.base + FTSConfig)
+```
+
+## Search
+
+A-vorto uses A-core's FTS5 full-text search:
 
 - Full-text search on `teksto` field
 - Filters: `lingvo`, `kategorio`, `tipo`, `temo`
@@ -137,25 +83,6 @@ svc.search_advanced("query", fuzzy=True, filters={"lingvo": "fr"})
 5. Tests required for all modules
 6. Use WAL mode for SQLite
 
-
-
-## Package Manager: `uv` is Required
-
-All A-ecosystem development **must** use `uv` as the package manager:
-
-| Operation | Command |
-|-----------|---------|
-| Install dependencies | `uv pip install <pkg>` |
-| Install project in dev mode | `uv pip install -e .` |
-| Run tests | `uv run pytest tests/` |
-| Install CLI tools (poetry, etc.) | `uv tool install <tool>` |
-| Add dev dependency | `uv add --dev <pkg>` |
-
-**Exceptions:**
-- `pip` in README install instructions is acceptable for end users who may not have `uv`
-- Readthedocs platform build may require `pip` (platform constraint)
-- Runtime `install-on-confirmation` code may fall back to `pip` if `uv` is unavailable (see A-core AGENTS.md)
-
 ## What to Avoid
 
 - Don't duplicate A-core utilities
@@ -163,6 +90,14 @@ All A-ecosystem development **must** use `uv` as the package manager:
 - Don't use `print()` — use `A` output functions
 - Don't hardcode paths — use `A.core.paths`
 - Don't implement utilities that should be in core
+
+## Testing
+
+```bash
+cd A-vorto
+uv venv .venv && uv pip install pytest pytest-mock typer rich --python .venv/bin/python
+PYTHONPATH=../A-core/src:src .venv/bin/python -m pytest tests/
+```
 
 ## Features
 
@@ -176,8 +111,6 @@ A-vorto integrates the following A-core features:
 | Markdown preview | `vidi --html` | `A.core.markdown_html_view` |
 | FTS5 search | `serci` | `CRUDService.search_advanced()` |
 | Fuzzy search | `serci --fuzzy` | `CRUDService.search_fuzzy()` |
-| Date range filter | `serci --dato-de/--dato-gis` | `A.utils.date.date_range()` + `range_filters` in FTS builder |
-| Review history | `recenzi-historio` | DB tables `recenzo_sesio`, `recenzo_rezulto` |
 | Bidirectional links | `--ligilo` on `aldoni`/`modifi` | `A.core.links` (A-core #18) |
 | Cross-references | `--ref` on `vidi` | `A.core.references` (A-core #19) |
 
@@ -187,17 +120,15 @@ A-vorto integrates the following A-core features:
 |---------|-----|----------------|
 | Type normalization | `--tipo su,aj` | `utils.normalize_tipo()` maps abbreviations via TIPO_MAP |
 | Tonality normalization | `--tono nf` | `utils.normalize_tono()` maps via TONO_MAP |
-| Difinoj+Uzoj input | `--difino "def::eg"` | `utils.split_difino_uzo()` (4 syntax variants) |
+| Difinoj+Uzoj input | `--difino "def:{eg}"` | `utils.split_difino_uzo()` (3 syntax variants) |
 | Etikedoj (tags) | `--etikedo key:val` | `utils.parse_etikedoj()` |
 | Kategorio auto-detect | automatic on `aldoni` | `utils.detect_kategorio()` (vorto/frazo/frazdaro) |
 | Multiline text normalization | automatic | `utils.normalize_multiline_text()` |
 | Clear-* flags on `modifi` | `--clear-difinoj` etc. | Explicit reset of JSON arrays/null fields |
-| Ligilo text resolution | `-L` on `aldoni`/`modifi` | `VortoService.resolve_ligilo_refs()` resolves text, `#uuid`, `vt#`, `ec#` to UUIDs |
 
-Implemented:
-- Bidirectional links via `--ligilo` on `aldoni`/`modifi` and `--ref` on `vidi` (A-core #18, #19)
+Implemented (A-core #18, #19):
+- Bidirectional links via `--ligilo` on `aldoni`/`modifi` and `--ref` on `vidi`
 - Cross-references `vt#uuid` parsed from text fields (difinoj, uzoj)
-- Ligilo text resolution: `-L` accepts plain text, `#uuid`, `vt#uuid`, `ec#ref` — resolves to canonical UUID (#41)
 
 ## Testing
 
@@ -211,13 +142,12 @@ PYTHONPATH=../A-core/src:src .venv/bin/python -m pytest tests/
 
 | Module | Tests | Description |
 |--------|-------|-------------|
-| `test_cli.py` | 17 | CLI commands via CliRunner + full CRUD cycle |
-| `test_service.py` | 20 | CRUDService operations + ligilo ref resolution (11) |
-| `test_storage.py` | 5 | SQLite storage layer (get_db singleton) |
-| `test_utils.py` | 63 | Type maps, parsers, normalizers, split_difino_uzo |
-| `test_recenzi.py` | 20 | Date filtering, review helpers, session persistence |
+| `test_cli.py` | 7+ | CLI commands via CliRunner |
+| `test_service.py` | 9 | CRUDService operations |
+| `test_storage.py` | 5 | SQLite storage layer |
+| `test_utils.py` | 56 | Type maps, parsers, normalizers |
 
-**Total: 125 tests — all passing**
+**Total: 79 tests** (3 pre-existing FTS5 failures in test env)
 
 ## Documentation
 

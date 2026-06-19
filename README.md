@@ -20,10 +20,6 @@ A-vorto - personal wordbook (vortaro) microapp
 ## Install
 
 ```bash
-# Recommended — fast, reliable
-pip install uv && uv pip install A-vorto
-
-# Traditional
 pip install A-vorto
 ```
 
@@ -34,9 +30,7 @@ Requires **A-core** (automatically installed as dependency).
 ```bash
 A vorto list              # List all word entries
 A vorto vidi <uuid>       # View a word entry (--html for markdown preview)
-A vorto serci <query>     # Full-text search (FTS5, --fuzzy for fuzzy match)
-A vorto recenzi           # Interactive vocabulary review
-A vorto recenzi-historio  # View review session history
+A vorto serci <query>    # Full-text search (FTS5, --fuzzy for fuzzy match)
 A vorto aldoni <teksto>   # Add a new word entry
 A vorto modifi <uuid>     # Modify a word entry
 A vorto forigi <uuid>     # Delete (soft) or --hard (permanent)
@@ -64,10 +58,7 @@ A vorto serci "cœur"
 # With language filter
 A vorto serci "hello" --lingvo en
 
-# Date range filter (supports YYYYMMDD, MMDD, DD, or YYYY-MM-DD)
-A vorto serci "hello" --dato-de 2026-01-01 --dato-gis 20261231
-
-# Fuzzy search (requires: uv pip install rapidfuzz)
+# Fuzzy search (requires: pip install rapidfuzz)
 A vorto serci "heelo" --fuzzy
 ```
 
@@ -79,7 +70,7 @@ uv venv .venv && uv pip install pytest pytest-mock typer rich --python .venv/bin
 PYTHONPATH=../A-core/src:src .venv/bin/python -m pytest tests/
 ```
 
-**125 tests passing** (test_cli.py, test_service.py, test_storage.py, test_utils.py, test_recenzi.py)
+**23 tests passing** (test_cli.py, test_service.py, test_storage.py)
 
 ## Documentation
 
