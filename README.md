@@ -1,5 +1,9 @@
 # A-vorto
 
+> [!IMPORTANT]
+> **Status: frozen** — see [A-workspace#22](https://github.com/Ron-RONZZ-org/A-workspace/issues/22) for rationale.
+> The first product fork is **[lighterbird](https://github.com/Ron-RONZZ-org/lighterbird)** (email, contacts, calendar, todo).
+
 ## Context
 
 This module uses [A-workspace](https://github.com/Ron-RONZZ-org/A-workspace) as a **git submodule**:

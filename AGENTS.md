@@ -43,12 +43,26 @@ If you need a utility that should be in A-core:
 
 ```
 src/A_vorto/
-├── __init__.py       # Plugin exports
-├── cli.py           # Typer app (11 commands)
-├── service.py       # CRUDService with FTS5
-├── utils.py         # Type maps, parsers, normalizers (TIPO_MAP, TONO_MAP, difino/uzo parsing, etikedoj, kategorio auto-detect)
+├── __init__.py              # Plugin exports
+├── cli.py                  # Typer app (13 commands, plus recenzi-historio sub-typer)
+├── service.py              # VortoService with FTS5 + fuzzy search
+├── utils.py                # Type maps, parsers, normalizers
+├── aldoni_cmd.py           # aldoni command (fat command, < 200 lines)
+├── modifi_cmd.py           # modifi command (fat command, < 200 lines)
+├── vidi_cmd.py             # vidi command (fat command, < 200 lines)
+├── serci_cmd.py            # serci command (fat command, < 200 lines)
+├── recenzi_cmd.py          # recenzi + historio sub-typer (347 lines)
+├── recenzi_helpers.py      # Recenzi helpers: session CRUD, review modes
+├── search_helpers.py       # Search execution helpers
+├── modify_helpers.py       # Modify data helpers
+├── manage_helpers.py       # CRUD management helpers (forigi, malfari, rubujo)
+├── import_export_helpers.py# Import/export helpers
+├── display_helpers.py      # Display helpers
+├── _display_preview.py     # Preview display helpers
+├── _display_references.py  # Reference display helpers
 └── data/
-    └── storage.py  # SQLite (uses A.data.base + FTSConfig)
+    ├── storage.py          # SQLite (uses A.data.base + FTSConfig)
+    └── migrate_from_autish.py  # Migration from autish legacy DB
 ```
 
 ## Search
@@ -99,9 +113,31 @@ uv venv .venv && uv pip install pytest pytest-mock typer rich --python .venv/bin
 PYTHONPATH=../A-core/src:src .venv/bin/python -m pytest tests/
 ```
 
+## CLI Commands
+
+A-vorto registers 13 commands (plus a sub-typer):
+
+| Command | Purpose | Source |
+|---------|---------|--------|
+| `ls` | List entries | `cli.py` |
+| `vidi` | View entry detail | `vidi_cmd.py` |
+| `aldoni` | Add new entry | `aldoni_cmd.py` |
+| `modifi` | Modify entry | `modifi_cmd.py` |
+| `serci` | Search entries | `serci_cmd.py` |
+| `serchi` | Deprecated alias for `serci` | `cli.py` |
+| `forigi` | Delete entries | `cli.py` |
+| `malfari` | Undo last operation | `cli.py` |
+| `rubujo` | List trash entries | `cli.py` |
+| `restaurigi` | Restore from trash | `cli.py` |
+| `senrubujigi` | Empty trash | `cli.py` |
+| `importi` | Import from file | `cli.py` |
+| `eksporti` | Export to file | `cli.py` |
+| `recenzi` | Interactive review | `recenzi_cmd.py` |
+| `recenzi-historio` | Review history (sub-typer with `ls`, `vidi`, `statistiko`, `forigi`, `malplenigi`) | `recenzi_cmd.py` |
+
 ## Features
 
-A-vorto integrates the following A-core features:
+### A-core Feature Integration
 
 | Feature | CLI Command | A-core Module |
 |---------|-------------|---------------|
@@ -114,7 +150,7 @@ A-vorto integrates the following A-core features:
 | Bidirectional links | `--ligilo` on `aldoni`/`modifi` | `A.core.links` (A-core #18) |
 | Cross-references | `--ref` on `vidi` | `A.core.references` (A-core #19) |
 
-## A-vorto specific features
+### A-vorto Specific Features
 
 | Feature | CLI | Implementation |
 |---------|-----|----------------|
@@ -125,8 +161,10 @@ A-vorto integrates the following A-core features:
 | Kategorio auto-detect | automatic on `aldoni` | `utils.detect_kategorio()` (vorto/frazo/frazdaro) |
 | Multiline text normalization | automatic | `utils.normalize_multiline_text()` |
 | Clear-* flags on `modifi` | `--clear-difinoj` etc. | Explicit reset of JSON arrays/null fields |
+| **Interactive review** | `recenzi` | `recenzi_cmd.py` + `recenzi_helpers.py` — 3 modes: difinoj (definition review), tajpu (type-the-word), multobla (multiple choice) |
+| Review history | `recenzi-historio` | `recenzi_cmd.py` — `ls`, `vidi`, `statistiko`, `forigi`, `malplenigi` sub-commands |
 
-Implemented (A-core #18, #19):
+### Cross-References (A-core #18, #19)
 - Bidirectional links via `--ligilo` on `aldoni`/`modifi` and `--ref` on `vidi`
 - Cross-references `vt#uuid` parsed from text fields (difinoj, uzoj)
 
@@ -142,12 +180,13 @@ PYTHONPATH=../A-core/src:src .venv/bin/python -m pytest tests/
 
 | Module | Tests | Description |
 |--------|-------|-------------|
-| `test_cli.py` | 7+ | CLI commands via CliRunner |
-| `test_service.py` | 9 | CRUDService operations |
-| `test_storage.py` | 5 | SQLite storage layer |
-| `test_utils.py` | 56 | Type maps, parsers, normalizers |
+| `test_cli.py` | 50+ | CLI commands via CliRunner |
+| `test_service.py` | 12 | CRUDService operations |
+| `test_storage.py` | 6 | SQLite storage layer |
+| `test_utils.py` | 37 | Type maps, parsers, normalizers |
+| `test_recenzi.py` | 20 | Recenzi session CRUD + review modes |
 
-**Total: 79 tests** (3 pre-existing FTS5 failures in test env)
+**Total: 125 tests** (all pass)
 
 ## Documentation
 
